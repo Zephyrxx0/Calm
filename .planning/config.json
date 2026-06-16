@@ -1,0 +1,14 @@
+{
+  "project_name": "Calm",
+  "tech_stack": {
+    "frontend": "Next.js",
+    "backend": "Python",
+    "database": "PostgreSQL"
+  },
+  "ai_engine": "Google Cloud AI",
+  "mvp_feature": "The Interview (AI Carbon Coach)",
+  "design_references": [
+    "https://www.tasteskill.dev/docs",
+    "Vintage Broadsheet Aesthetic"
+  ]
+}
