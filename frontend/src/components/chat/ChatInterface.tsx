@@ -1,11 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import { PromptInput, PromptInputTextarea, PromptInputFooter, PromptInputSubmit } from "@/components/ai-elements/prompt-input";
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -13,6 +10,9 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ sessionId, initialMessage }: ChatInterfaceProps) {
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -28,12 +28,23 @@ export default function ChatInterface({ sessionId, initialMessage }: ChatInterfa
     transport,
   });
 
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || status !== "ready") return;
+    sendMessage({ text: input });
+    setInput("");
+  };
+
   const handleQuickAnswer = (answer: string) => {
-    if (status === "streaming" || status === "submitted") return;
+    if (status !== "ready") return;
     sendMessage({ text: answer });
   };
 
-  // Quick answer options for quantitative questions
   const quickAnswers = [
     { label: "0-5", value: "0-5" },
     { label: "5-20", value: "5-20" },
@@ -42,86 +53,76 @@ export default function ChatInterface({ sessionId, initialMessage }: ChatInterfa
   ];
 
   return (
-    <div className="flex flex-1 flex-col max-w-3xl mx-auto w-full h-full relative px-4">
-      
-      {/* Scrollable message list using Conversation */}
-      <Conversation className="flex-1 pb-32">
-        <ConversationContent className="gap-6 pb-12 pt-8">
-          {initialMessage && (
-            <Message from="assistant" className="animate-fade-in">
-              <MessageContent className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-border text-foreground">
-                <MessageResponse className="prose prose-sm md:prose-base max-w-none text-foreground/90 leading-relaxed font-sans prose-p:leading-relaxed">
-                  {initialMessage}
-                </MessageResponse>
-              </MessageContent>
-            </Message>
-          )}
-          {messages.length === 0 && !initialMessage && (
-            <div className="text-center text-muted py-12 animate-fade-in">
-              <p className="text-sm font-sans">Your gentle conversation will appear here.</p>
+    <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto py-8 space-y-4">
+        {initialMessage && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-surface px-5 py-3.5 shadow-sm ring-1 ring-border">
+              <p className="text-sm leading-relaxed text-foreground/90">
+                {initialMessage}
+              </p>
             </div>
-          )}
-          
-          {messages.map((message) => (
-            <Message key={message.id} from={message.role} className="animate-fade-in">
-              <MessageContent 
-                className={`p-5 shadow-sm text-sm md:text-base font-sans leading-relaxed
-                  ${message.role === "user" 
-                    ? "bg-accent text-white rounded-2xl rounded-tr-sm ml-auto ring-1 ring-accent-hover/20" 
-                    : "bg-surface text-foreground rounded-2xl rounded-tl-sm ring-1 ring-border"
-                  }
-                `}
-              >
-                {/* Parse out streamdown components or just plain text */}
-                <MessageResponse className={`prose max-w-none ${message.role === "user" ? "prose-p:text-white" : "prose-p:text-foreground/90"} prose-p:leading-relaxed`}>
-                  {message.parts.map((part) => (part.type === "text" ? part.text : "")).join("\n")}
-                </MessageResponse>
-              </MessageContent>
-            </Message>
-          ))}
-        </ConversationContent>
-      </Conversation>
-
-      {/* Input area anchored to bottom */}
-      <div className="absolute bottom-6 left-4 right-4 md:left-12 md:right-12">
-        <div className="bg-surface/80 backdrop-blur-xl ring-1 ring-black/[0.08] shadow-[0_4px_24px_-8px_rgba(0,0,0,0.08)] rounded-2xl p-2 pb-3">
-          
-          {/* Quick-answer buttons */}
-          <div className="flex gap-2 flex-wrap mb-3 px-2 pt-2">
-            {quickAnswers.map((qa) => (
-              <button
-                key={qa.value}
-                onClick={() => handleQuickAnswer(qa.value)}
-                disabled={status === "streaming" || status === "submitted"}
-                className="rounded-full border border-border bg-background px-4 py-1.5 text-xs font-medium text-muted-light transition-all hover:text-foreground hover:bg-black/[0.03] disabled:opacity-50 disabled:cursor-not-allowed hover:border-muted/30"
-              >
-                {qa.label}
-              </button>
-            ))}
           </div>
+        )}
 
-          <PromptInput
-            onSubmit={({ text }) => {
-              if (!text.trim() || status === "streaming" || status === "submitted") return;
-              sendMessage({ text });
-            }}
-            className="w-full relative"
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <PromptInputTextarea 
-              placeholder="Reflect and reply..." 
-              className="min-h-[50px] bg-transparent border-none shadow-none focus-visible:ring-0 resize-none font-sans text-base px-3 py-2 text-foreground placeholder:text-muted-light"
-            />
-            <PromptInputFooter className="flex justify-between items-center px-2">
-              <span className="text-[10px] text-muted-light tracking-wide uppercase font-medium">Take your time</span>
-              <PromptInputSubmit 
-                status={status} 
-                className="bg-accent text-white hover:bg-accent-hover rounded-full px-5 py-2 font-medium text-sm transition-transform active:scale-95"
-              >
-                Respond
-              </PromptInputSubmit>
-            </PromptInputFooter>
-          </PromptInput>
+            <div
+              className={`max-w-[80%] px-5 py-3.5 text-sm leading-relaxed ${
+                message.role === "user"
+                  ? "rounded-2xl rounded-tr-sm bg-accent text-white"
+                  : "rounded-2xl rounded-tl-sm bg-surface shadow-sm ring-1 ring-border text-foreground/90"
+              }`}
+            >
+              {message.parts.map((part, i) =>
+                part.type === "text" ? (
+                  <span key={i}>{part.text}</span>
+                ) : null
+              )}
+            </div>
+          </div>
+        ))}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="border-t border-border bg-background py-4">
+        {/* Quick answers */}
+        <div className="flex gap-2 flex-wrap mb-3">
+          {quickAnswers.map((qa) => (
+            <button
+              key={qa.value}
+              onClick={() => handleQuickAnswer(qa.value)}
+              disabled={status !== "ready"}
+              className="rounded-full border border-border bg-surface px-4 py-1.5 text-xs font-medium text-muted hover:text-foreground hover:border-muted/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {qa.label}
+            </button>
+          ))}
         </div>
+
+        <form onSubmit={handleSubmit} className="flex gap-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Reflect and reply..."
+            disabled={status !== "ready"}
+            className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent disabled:opacity-50 transition-shadow"
+          />
+          <button
+            type="submit"
+            disabled={status !== "ready" || !input.trim()}
+            className="rounded-xl bg-accent px-6 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
+          >
+            Send
+          </button>
+        </form>
       </div>
     </div>
   );
