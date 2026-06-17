@@ -74,6 +74,14 @@ export default function InterviewPage() {
           <p className="text-[10px] font-medium text-muted uppercase tracking-[0.2em]">
             The Interview
           </p>
+          {sessionId && (
+            <a
+              href={`/ledger/${sessionId}`}
+              className="text-xs font-sans text-muted hover:text-foreground transition-colors"
+            >
+              Refine in Ledger →
+            </a>
+          )}
         </div>
       </header>
 
