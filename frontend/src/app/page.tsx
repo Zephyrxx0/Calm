@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useInView } from "@/hooks/use-in-view";
+import { DoodleLeaf, DoodleBranch, DoodleSun, DoodlePebbles } from "@/components/OrganicDoodles";
 
 /* ─── Grain Overlay ─── */
+
 function Grain() {
   return <div className="grain" aria-hidden="true" />;
 }
@@ -116,8 +118,12 @@ function Manifesto() {
   const { ref: cardsRef, isInView: cardsVisible } = useInView({ threshold: 0.1 });
 
   return (
-    <section id="manifesto" className="py-32 md:py-40 px-6 md:px-12">
-      <div className="max-w-6xl mx-auto">
+    <section id="manifesto" className="relative py-32 md:py-40 px-6 md:px-12 overflow-hidden">
+      {/* Decorative Doodles */}
+      <DoodleBranch className="absolute top-10 -left-20 w-64 h-64 text-accent/5 rotate-12" />
+      <DoodleLeaf className="absolute bottom-20 -right-10 w-48 h-48 text-accent/5 -rotate-45" />
+
+      <div className="relative z-10 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-start">
           {/* Left: Massive Typography */}
           <div
@@ -221,8 +227,12 @@ function Process() {
   const { ref: card3Ref, isInView: card3Visible } = useInView({ threshold: 0.1 });
 
   return (
-    <section id="process" className="py-32 md:py-40 px-6 md:px-12 bg-secondary/30">
-      <div className="max-w-6xl mx-auto">
+    <section id="process" className="relative py-32 md:py-40 px-6 md:px-12 bg-secondary/30 overflow-hidden">
+      {/* Decorative Doodles */}
+      <DoodleSun className="absolute top-20 right-[10%] w-56 h-56 text-accent/5" />
+      <DoodlePebbles className="absolute bottom-10 left-[5%] w-40 h-40 text-accent/5 opacity-40" />
+
+      <div className="relative z-10 max-w-6xl mx-auto">
         {/* Section Header */}
         <div
           ref={headingRef}

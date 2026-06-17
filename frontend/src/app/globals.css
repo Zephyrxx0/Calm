@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -6,14 +7,14 @@
 
 @theme inline {
   /* ── Calm Palette ── */
-  --color-background: #fafaf8;
-  --color-foreground: #1c1c1a;
+  --color-background: #f4f3ef;
+  --color-foreground: #2d2c29;
   --color-surface: #ffffff;
-  --color-muted: #6b6b68;
-  --color-muted-light: #9a9a97;
-  --color-accent: #6b7f5e;
-  --color-accent-hover: #5a6e4e;
-  --color-border: #e5e5e2;
+  --color-muted: #73726d;
+  --color-muted-light: #a3a29d;
+  --color-accent: #4b5e40;
+  --color-accent-hover: #3d4d34;
+  --color-border: #e3dfd3;
 
   /* ── shadcn component tokens ── */
   --color-primary: var(--accent);
