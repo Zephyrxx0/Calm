@@ -5,13 +5,21 @@ This document outlines the high-level development phases for the Calm project.
 ## Phase 1: The Foundation & The Interview (MVP)
 
 *   **Objective:** Build and launch the core conversational experience.
+*   **Requirements:** [Tech-Spike, Design-System, AI-Coach, Carbon-Model, Frontend]
 *   **Key deliverables:**
     *   **Tech Spike:** Setup Next.js, Python, and PostgreSQL infrastructure.
-    *   **Design System:** Implement the core "Vintage Broadsheet" typographic and layout styles.
+    *   **Design System:** Implement the calm, cozy design language (soft colors, rounded corners, minimal).
     *   **AI Coach:** Develop the conversational backend service with Google Cloud AI integration.
     *   **Carbon Model:** Implement a simple carbon calculation model.
-    *   **Frontend:** Build the chat interface and the dynamic "Edition" output page.
-*   **Goal:** A functional MVP that allows a user to complete the carbon interview and receive their personalized newspaper report.
+    *   **Frontend:** Build the chat interface and the dynamic summary output page.
+*   **Goal:** A functional MVP that allows a user to complete the carbon interview and receive their personalized carbon summary.
+
+**Plans:** 4 plans
+Plans:
+- [ ] 01-01-PLAN.md — Tech Spike: Setup DB and core SQLAlchemy models
+- [ ] 01-02-PLAN.md — Design System: Typography, colors, and Landing Page
+- [ ] 01-03-PLAN.md — AI Coach Backend: Gemini integration and Carbon Model
+- [ ] 01-04-PLAN.md — Frontend Implementation: Chat UI and Edition layout
 
 ## Phase 2: The Ledger
 
@@ -22,13 +30,13 @@ This document outlines the high-level development phases for the Calm project.
     *   Ability for the system to update a user's carbon profile based on ledger entries.
     *   Introduce user accounts to persist data.
 
-## Phase 3: The Edition, Perfected
+## Phase 3: The Summary, Enhanced
 
 *   **Objective:** Enhance the output and reporting.
 *   **Key deliverables:**
-    *   More sophisticated layout options for "The Edition."
+    *   More detailed breakdown and insights in the summary.
     *   Actionable recommendations and comparisons (e.g., vs. national average).
-    *   Data visualizations styled within the broadsheet aesthetic (e.g., minimalist graphs).
+    *   Data visualizations with the calm design language.
     *   Sharing capabilities for the generated report.
 
 ## Phase 4: Refinement & Growth

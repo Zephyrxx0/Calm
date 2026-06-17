@@ -1,29 +1,40 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import ChatInterface from "@/components/chat/ChatInterface";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock @ai-sdk/react useChat hook
+const mockUseChat = vi.fn();
 vi.mock("@ai-sdk/react", () => ({
-  useChat: vi.fn(() => ({
-    messages: [],
-    sendMessage: vi.fn(),
-    status: "ready",
-    error: null,
-  })),
+  useChat: (...args: unknown[]) => mockUseChat(...args),
 }));
 
 // Mock ai DefaultChatTransport
+const mockTransport = vi.fn();
 vi.mock("ai", () => ({
-  DefaultChatTransport: vi.fn().mockImplementation(() => ({})),
+  DefaultChatTransport: class {
+    constructor(opts: unknown) {
+      mockTransport(opts);
+    }
+  },
 }));
 
+// Import after mocks
+import ChatInterface from "@/components/chat/ChatInterface";
+
 describe("ChatInterface", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseChat.mockReturnValue({
+      messages: [],
+      sendMessage: vi.fn(),
+      status: "ready",
+      error: null,
+    });
+  });
+
   it("renders scrollable list of previous messages", () => {
-    // Mock useChat to return messages
-    const { useChat } = require("@ai-sdk/react");
-    useChat.mockReturnValue({
+    mockUseChat.mockReturnValue({
       messages: [
-        { id: "1", role: "ai", parts: [{ type: "text", text: "Hello!" }] },
+        { id: "1", role: "assistant", parts: [{ type: "text", text: "Hello!" }] },
         { id: "2", role: "user", parts: [{ type: "text", text: "Hi there" }] },
       ],
       sendMessage: vi.fn(),
@@ -62,19 +73,16 @@ describe("ChatInterface", () => {
   });
 
   it("initializes useChat with correct API endpoint and session ID", () => {
-    const { useChat } = require("@ai-sdk/react");
-    const { DefaultChatTransport } = require("ai");
-
     render(<ChatInterface sessionId="test-session-456" />);
 
     // useChat should be called
-    expect(useChat).toHaveBeenCalled();
+    expect(mockUseChat).toHaveBeenCalled();
 
     // DefaultChatTransport should be instantiated with API endpoint
-    expect(DefaultChatTransport).toHaveBeenCalled();
+    expect(mockTransport).toHaveBeenCalled();
 
     // Verify the transport was configured with the correct API path
-    const transportCall = DefaultChatTransport.mock.calls[0][0];
+    const transportCall = mockTransport.mock.calls[0][0] as { api: string };
     expect(transportCall.api).toContain("/api/interview/message");
   });
 });

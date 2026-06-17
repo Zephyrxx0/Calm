@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { toPng } from "html-to-image";
 import Link from "next/link";
 
-interface EditionData {
+interface SummaryData {
   session_id: string;
   footprint: {
     total_co2e: number;
@@ -14,17 +14,17 @@ interface EditionData {
   quotes: string[];
 }
 
-export default function EditionPage({
+export default function SummaryPage({
   params,
 }: {
   params: Promise<{ sessionId: string }>;
 }) {
   const [sessionId, setSessionId] = useState<string>("");
-  const [data, setData] = useState<EditionData | null>(null);
+  const [data, setData] = useState<SummaryData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const editionRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     params.then((p) => setSessionId(p.sessionId));
@@ -33,14 +33,14 @@ export default function EditionPage({
   useEffect(() => {
     if (!sessionId) return;
 
-    async function fetchEdition() {
+    async function fetchSummary() {
       try {
         const response = await fetch(`/api/edition/${sessionId}`);
         if (!response.ok) {
-          throw new Error("Failed to fetch edition data");
+          throw new Error("Failed to fetch summary data");
         }
-        const editionData = await response.json();
-        setData(editionData);
+        const summaryData = await response.json();
+        setData(summaryData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -48,19 +48,19 @@ export default function EditionPage({
       }
     }
 
-    fetchEdition();
+    fetchSummary();
   }, [sessionId]);
 
   const handleExportImage = async () => {
-    if (!editionRef.current || exporting) return;
+    if (!summaryRef.current || exporting) return;
     setExporting(true);
     try {
-      const dataUrl = await toPng(editionRef.current, {
+      const dataUrl = await toPng(summaryRef.current, {
         quality: 0.95,
-        backgroundColor: "#FDFCF7",
+        backgroundColor: "#FAFAF8",
       });
       const link = document.createElement("a");
-      link.download = `calm-edition-${sessionId.slice(0, 8)}.png`;
+      link.download = `calm-summary-${sessionId.slice(0, 8)}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -73,9 +73,7 @@ export default function EditionPage({
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center">
-        <p className="font-mono text-sm tracking-wide uppercase text-muted-foreground">
-          Typesetting your edition...
-        </p>
+        <p className="text-sm text-muted">Preparing your summary...</p>
       </main>
     );
   }
@@ -84,12 +82,12 @@ export default function EditionPage({
     return (
       <main className="flex flex-1 items-center justify-center">
         <div className="text-center">
-          <p className="font-mono text-sm text-destructive mb-4">
-            {error || "Edition not found"}
+          <p className="text-sm text-destructive mb-4">
+            {error || "Summary not found"}
           </p>
           <Link
             href="/"
-            className="font-mono text-xs uppercase tracking-wide underline"
+            className="text-sm text-accent hover:text-accent-hover transition-colors"
           >
             Return home
           </Link>
@@ -102,138 +100,128 @@ export default function EditionPage({
   const totalTons = (footprint.total_co2e / 1000).toFixed(1);
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="flex flex-1 flex-col min-h-screen">
       {/* Action bar (hidden in print) */}
-      <div className="print:hidden border-b-2 border-ink px-6 py-3 flex justify-between items-center">
+      <div className="print:hidden border-b border-border px-6 py-3 flex justify-between items-center">
         <Link
           href="/"
-          className="font-mono text-xs uppercase tracking-wide text-muted-foreground hover:text-ink"
+          className="text-sm text-muted hover:text-foreground transition-colors"
         >
           ← Back
         </Link>
         <div className="flex gap-3">
           <button
             onClick={() => window.print()}
-            className="px-4 py-1 border border-ink font-mono text-xs uppercase tracking-wide hover:bg-ink hover:text-paper transition-colors"
+            className="rounded-lg border border-border bg-surface px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
             Print / PDF
           </button>
           <button
             onClick={handleExportImage}
             disabled={exporting}
-            className="px-4 py-1 border border-ink font-mono text-xs uppercase tracking-wide hover:bg-ink hover:text-paper transition-colors disabled:opacity-50"
+            className="rounded-lg border border-border bg-surface px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
           >
             {exporting ? "Exporting..." : "Export Image"}
           </button>
         </div>
       </div>
 
-      {/* Edition content */}
-      <div ref={editionRef} className="bg-paper text-ink p-8 md:p-12">
-        {/* Masthead */}
-        <header className="text-center border-b-4 border-double border-ink pb-6 mb-8">
-          <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground mb-2">
-            A Personal Edition
-          </p>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            The Calm Gazette
-          </h1>
-          <p className="font-mono text-xs tracking-wide mt-2 text-muted-foreground">
-            Your Carbon Footprint, Typeset
-          </p>
-        </header>
+      {/* Summary content */}
+      <div ref={summaryRef} className="bg-background text-foreground p-8 md:p-12">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <header className="text-center mb-12">
+            <h1 className="text-3xl font-semibold tracking-tight mb-3">
+              Your Carbon Summary
+            </h1>
+            <p className="text-muted text-sm">
+              Based on your lifestyle interview
+            </p>
+          </header>
 
-        {/* Headline */}
-        <h2 className="text-3xl md:text-5xl font-bold text-center leading-tight mb-4">
-          YOUR FOOTPRINT: {totalTons} TONNES CO₂e PER YEAR
-        </h2>
-
-        <p className="text-center text-lg max-w-2xl mx-auto mb-8 text-muted-foreground">
-          Based on your lifestyle interview, here is your personalized carbon
-          profile — broken down by category, compared to the average, and
-          paired with actionable steps.
-        </p>
-
-        {/* Pull quotes */}
-        {quotes.length > 0 && (
-          <div className="border-y-2 border-ink py-6 mb-8 max-w-2xl mx-auto">
-            {quotes.map((quote, i) => (
-              <blockquote
-                key={i}
-                className="text-xl md:text-2xl italic text-center leading-relaxed px-4"
-              >
-                &ldquo;{quote}&rdquo;
-              </blockquote>
-            ))}
+          {/* Total footprint */}
+          <div className="text-center mb-12">
+            <p className="text-sm text-muted uppercase tracking-wide mb-2">
+              Total Annual Footprint
+            </p>
+            <p className="text-6xl font-semibold tracking-tight">
+              {totalTons}
+            </p>
+            <p className="text-lg text-muted mt-2">tonnes CO₂e / year</p>
+            <p className="text-xs text-muted-light mt-4">
+              The global average is approximately 4.0 tonnes per person.
+            </p>
           </div>
-        )}
 
-        {/* Category breakdown — multi-column broadsheet layout */}
-        <section className="mb-8">
-          <h3 className="text-2xl font-bold border-b-2 border-ink pb-2 mb-6">
-            Breakdown by Category
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Object.entries(footprint.breakdown).map(([category, co2e]) => {
-              const percentage = (
-                (co2e / footprint.total_co2e) *
-                100
-              ).toFixed(0);
-              return (
-                <div key={category} className="border border-ink p-4">
-                  <h4 className="font-bold text-lg uppercase tracking-wide mb-2">
-                    {category}
-                  </h4>
-                  <p className="text-3xl font-bold mb-1">
-                    {(co2e / 1000).toFixed(1)}t
-                  </p>
-                  <div className="w-full bg-muted h-2 mb-1">
-                    <div
-                      className="bg-ink h-2"
-                      style={{ width: `${percentage}%` }}
-                    />
+          {/* Pull quotes / insights */}
+          {quotes.length > 0 && (
+            <div className="border-y border-border py-6 mb-10">
+              {quotes.map((quote, i) => (
+                <blockquote
+                  key={i}
+                  className="text-lg italic text-center leading-relaxed px-4 text-muted"
+                >
+                  &ldquo;{quote}&rdquo;
+                </blockquote>
+              ))}
+            </div>
+          )}
+
+          {/* Category breakdown */}
+          <section className="mb-10">
+            <h2 className="text-xl font-semibold mb-6">
+              Breakdown by Category
+            </h2>
+            <div className="space-y-4">
+              {Object.entries(footprint.breakdown).map(([category, co2e]) => {
+                const percentage = (
+                  (co2e / footprint.total_co2e) *
+                  100
+                ).toFixed(0);
+                return (
+                  <div key={category} className="rounded-xl bg-surface p-4 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-medium text-sm capitalize">
+                        {category}
+                      </h3>
+                      <p className="text-sm font-semibold">
+                        {(co2e / 1000).toFixed(1)}t
+                      </p>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className="bg-accent h-2 rounded-full transition-all"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-light mt-1">
+                      {percentage}% of total
+                    </p>
                   </div>
-                  <p className="font-mono text-xs text-muted-foreground">
-                    {percentage}% of total
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
 
-        {/* Footprint metric callout */}
-        <section className="border-4 border-double border-ink p-8 text-center mb-8">
-          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-2">
-            Total Annual Footprint
-          </p>
-          <p className="text-6xl md:text-7xl font-bold">
-            {totalTons}
-          </p>
-          <p className="text-xl mt-2">tonnes CO₂e / year</p>
-          <p className="font-mono text-xs text-muted-foreground mt-4">
-            The global average is approximately 4.0 tonnes per person.
-          </p>
-        </section>
-
-        {/* Footer */}
-        <footer className="border-t-2 border-ink pt-4 mt-8 text-center">
-          <p className="font-mono text-xs text-muted-foreground">
-            Generated by Calm — {new Date().toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-        </footer>
+          {/* Footer */}
+          <footer className="border-t border-border pt-6 mt-10 text-center">
+            <p className="text-xs text-muted-light">
+              Generated by Calm — {new Date().toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </footer>
+        </div>
       </div>
 
       {/* Print styles */}
       <style jsx global>{`
         @media print {
           body {
-            background: #fdfcf7 !important;
-            color: #1a1a1a !important;
+            background: #fafaf8 !important;
+            color: #2c2c2a !important;
           }
           .print\\:hidden {
             display: none !important;

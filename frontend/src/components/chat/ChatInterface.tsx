@@ -6,9 +6,10 @@ import { DefaultChatTransport } from "ai";
 
 interface ChatInterfaceProps {
   sessionId: string;
+  initialMessage?: string | null;
 }
 
-export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
+export default function ChatInterface({ sessionId, initialMessage }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -47,29 +48,43 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] max-w-3xl mx-auto">
+    <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full">
       {/* Scrollable message list */}
       <div
         role="log"
         aria-label="Chat messages"
-        className="flex-1 overflow-y-auto px-6 py-8 space-y-6"
+        className="flex-1 overflow-y-auto px-6 py-8 space-y-4"
       >
+        {messages.length === 0 && initialMessage && (
+          <div className="flex justify-start">
+            <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-surface text-foreground shadow-sm">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                {initialMessage}
+              </div>
+            </div>
+          </div>
+        )}
+        {messages.length === 0 && !initialMessage && (
+          <div className="text-center text-muted py-12">
+            <p className="text-sm">Your conversation will appear here.</p>
+          </div>
+        )}
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[80%] px-4 py-3 ${
+              className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                 message.role === "user"
-                  ? "bg-ink text-paper"
-                  : "bg-muted text-ink"
+                  ? "bg-accent text-white"
+                  : "bg-surface text-foreground shadow-sm"
               }`}
             >
               {message.parts.map((part, i) => {
                 if (part.type === "text") {
                   return (
-                    <div key={`${message.id}-${i}`} className="whitespace-pre-wrap">
+                    <div key={`${message.id}-${i}`} className="whitespace-pre-wrap text-sm leading-relaxed">
                       {part.text}
                     </div>
                   );
@@ -82,8 +97,8 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input area with hybrid controls */}
-      <div className="border-t-2 border-ink px-6 py-4 bg-paper">
+      {/* Input area */}
+      <div className="border-t border-border bg-background px-6 py-4">
         <form onSubmit={handleSubmit} className="flex gap-3 mb-3">
           <input
             type="text"
@@ -91,12 +106,12 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your answer..."
             disabled={status === "streaming" || status === "submitted"}
-            className="flex-1 px-4 py-2 border-2 border-ink bg-paper text-ink placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ink disabled:opacity-50"
+            className="flex-1 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-foreground placeholder:text-muted-light focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 disabled:opacity-50 transition-colors"
           />
           <button
             type="submit"
             disabled={status === "streaming" || status === "submitted" || !input.trim()}
-            className="px-6 py-2 border-2 border-ink bg-paper text-ink font-mono text-sm uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-lg bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
           </button>
@@ -109,7 +124,7 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
               key={qa.value}
               onClick={() => handleQuickAnswer(qa.value)}
               disabled={status === "streaming" || status === "submitted"}
-              className="px-4 py-1 border border-ink bg-paper text-ink font-mono text-xs uppercase tracking-wide transition-colors hover:bg-ink hover:text-paper disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg border border-border bg-surface px-4 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary hover:border-border disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {qa.label}
             </button>

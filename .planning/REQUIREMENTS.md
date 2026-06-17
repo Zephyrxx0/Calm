@@ -8,20 +8,20 @@ The user wants to understand their personal carbon footprint through a guided, c
 
 ## 2. Core User Flow
 
-1.  **Landing Page:** A user visits the site. The page presents a single, clear call-to-action: "Begin Your Interview." The design will evoke a vintage newspaper's front page, with a strong headline and minimal other elements.
+1.  **Landing Page:** A user visits the site. The page presents a single, clear call-to-action: "Begin Your Interview." The design is calm and minimal, with soft colors and generous whitespace.
 2.  **The Conversation:**
-    *   The user is introduced to the AI Carbon Coach, which acts as a "journalist."
+    *   The user is introduced to the AI Carbon Coach, which asks questions gently and clearly.
     *   The AI asks a series of questions one at a time, in a calm, unhurried manner.
     *   Questions cover key carbon-impact areas: commute, travel, home energy, and diet. The initial question set will be predefined.
-    *   The interface is purely conversational (chat-like), styled with a typographic, minimalist aesthetic. No complex UI elements.
+    *   The interface is purely conversational (chat-like), styled with a clean, minimal aesthetic. No complex UI elements.
 3.  **Profile Generation:**
     *   Once the interview is complete, the system calculates a high-level carbon footprint estimate.
-    *   The user's answers and the resulting footprint are formatted into "The Edition" - a single-page, personalized newspaper layout.
-4.  **The Edition (Output):**
+    *   The user's answers and the resulting footprint are formatted into a clear, beautiful summary page.
+4.  **The Summary (Output):**
     *   The output is a single, shareable web page.
-    *   It will feature a bold, personalized headline (e.g., "A CONVERSATION WITH [USER'S NAME]: A LOOK AT YOUR CARBON FOOTPRINT").
-    *   The user's footprint and a high-level breakdown are presented in a multi-column, typeset layout, mimicking a newspaper article.
-    *   It will include one or two "pull quotes" extracted from the user's answers.
+    *   It will feature a clear headline with the user's total footprint.
+    *   The footprint breakdown is presented in a clean, organized layout with category comparisons.
+    *   It will include key insights extracted from the user's answers.
 
 ## 3. Technical & Design Requirements
 
@@ -37,10 +37,10 @@ The user wants to understand their personal carbon footprint through a guided, c
 *   **AI:** Google Cloud AI (Gemini).
     *   The model will be prompted to act as a calm, curious journalist. The conversation flow will be guided by the application logic.
 *   **Design:**
-    *   **Aesthetic:** Vintage Broadsheet, guided by the principles of "Taste Skill."
-    *   **Typography:** A classic serif font for headlines and body text (e.g., a web-safe Garamond or a Google Font like Cormorant). Monospace for any "data" or "input" fields if necessary.
-    *   **Color:** Strictly monochrome (off-white `#FDFCF7` for the "paper", and a dark grey `#1A1A1A` for "ink").
-    *   **Layout:** Strong use of columns, white space, and typographic hierarchy. No traditional UI components like cards or buttons with background colors.
+    *   **Aesthetic:** Calm and cozy — soft, warm, minimal. Inspired by quiet interfaces like Claude.ai and Zen Browser.
+    *   **Typography:** Clean sans-serif for all text (system fonts or Inter). Generous line heights for readability.
+    *   **Color:** Warm off-white background, soft sage/muted green accents, warm grays for text. No harsh contrasts.
+    *   **Layout:** Centered content, max-width containers, generous whitespace. Rounded corners, subtle shadows. No harsh borders.
 
 ## 4. Out of Scope for MVP
 

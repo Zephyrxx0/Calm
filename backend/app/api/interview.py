@@ -32,16 +32,29 @@ async def health():
 
 @router.post("/interview/start")
 async def start_interview(db: AsyncSession = Depends(get_session)):
-    """Create a new ephemeral interview session and return its UUID."""
+    """Create a new ephemeral interview session and return its UUID with initial question."""
     session = InterviewSession()
     db.add(session)
     await db.commit()
     await db.refresh(session)
 
     # Initialize interview state
-    session_states[str(session.id)] = InterviewState()
+    state = InterviewState()
+    session_states[str(session.id)] = state
 
-    return {"session_id": str(session.id)}
+    # Generate initial greeting/question
+    coach = get_ai_coach()
+    ai_result = await coach.generate_response(state, "")
+
+    # Save AI greeting to DB
+    ai_msg = Message(session_id=session.id, role="ai", content=ai_result["text"])
+    db.add(ai_msg)
+    await db.commit()
+
+    return {
+        "session_id": str(session.id),
+        "initial_message": ai_result["text"],
+    }
 
 
 @router.post("/interview/{session_id}/message")

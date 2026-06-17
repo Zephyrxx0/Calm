@@ -5,6 +5,7 @@ import ChatInterface from "@/components/chat/ChatInterface";
 
 export default function InterviewPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [initialMessage, setInitialMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,6 +22,7 @@ export default function InterviewPage() {
 
         const data = await response.json();
         setSessionId(data.session_id);
+        setInitialMessage(data.initial_message || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -34,9 +36,7 @@ export default function InterviewPage() {
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center">
-        <p className="font-mono text-sm tracking-wide uppercase text-muted-foreground">
-          Preparing your interview...
-        </p>
+        <p className="text-sm text-muted">Preparing your interview...</p>
       </main>
     );
   }
@@ -44,7 +44,7 @@ export default function InterviewPage() {
   if (error) {
     return (
       <main className="flex flex-1 items-center justify-center">
-        <p className="font-mono text-sm text-destructive">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       </main>
     );
   }
@@ -54,18 +54,20 @@ export default function InterviewPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col">
+    <main className="flex flex-1 flex-col min-h-screen">
       {/* Header */}
-      <header className="border-b-2 border-ink px-6 py-4">
-        <div className="max-w-3xl mx-auto">
-          <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground">
+      <header className="border-b border-border px-6 py-4">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-xs font-medium text-muted uppercase tracking-wide">
             The Interview
           </p>
         </div>
       </header>
 
       {/* Chat Interface */}
-      <ChatInterface sessionId={sessionId} />
+      <div className="flex-1 flex flex-col">
+        <ChatInterface sessionId={sessionId} initialMessage={initialMessage} />
+      </div>
     </main>
   );
 }

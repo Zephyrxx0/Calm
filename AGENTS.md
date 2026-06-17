@@ -45,3 +45,9 @@ AGENTS.md              — This file
 - `.planning/PROJECT.md` — product vision and three features (Interview, Ledger, Edition)
 - `.planning/REQUIREMENTS.md` — detailed MVP user flow and technical/design requirements
 - `.planning/ROADMAP.md` — all 4 phases with deliverables
+
+instead of creating components, first search the registeries.
+
+use context7 for docs
+
+Whenever '/gsd-discuss-phase' is prompted, before writing any files, and most prefferably starting the actual discussion if possible, create a branch in the format `phase-<phase-number>-<short desc>` . Switch to new branch and write files there.
