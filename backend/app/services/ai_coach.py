@@ -66,6 +66,10 @@ class InterviewState:
     conversation_history: list[dict] = field(default_factory=list)
 
 
+# In-memory store for interview state per session (ephemeral, MVP)
+session_states: dict[str, InterviewState] = {}
+
+
 class AICoach:
     """Gemini-powered AI Coach that drives the carbon interview."""
 
