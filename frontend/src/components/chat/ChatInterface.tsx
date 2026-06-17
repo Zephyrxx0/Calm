@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Conversation, ConversationContent } from "@/components/ai-elements/conversation";
@@ -13,13 +13,19 @@ interface ChatInterfaceProps {
 }
 
 export default function ChatInterface({ sessionId, initialMessage }: ChatInterfaceProps) {
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/interview/message",
+        headers: {
+          "x-session-id": sessionId,
+        },
+      }),
+    [sessionId]
+  );
+
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/interview/message",
-      headers: {
-        "x-session-id": sessionId,
-      },
-    }),
+    transport,
   });
 
   const handleQuickAnswer = (answer: string) => {
@@ -41,7 +47,7 @@ export default function ChatInterface({ sessionId, initialMessage }: ChatInterfa
       {/* Scrollable message list using Conversation */}
       <Conversation className="flex-1 pb-32">
         <ConversationContent className="gap-6 pb-12 pt-8">
-          {messages.length === 0 && initialMessage && (
+          {initialMessage && (
             <Message from="assistant" className="animate-fade-in">
               <MessageContent className="rounded-2xl bg-surface p-5 shadow-sm ring-1 ring-border text-foreground">
                 <MessageResponse className="prose prose-sm md:prose-base max-w-none text-foreground/90 leading-relaxed font-sans prose-p:leading-relaxed">
