@@ -36,15 +36,15 @@ Plans:
 **Plans:** 3 plansPlans:
 **Wave 1**
 
-- [ ] 02-01-PLAN.md — Database Models & Ledger Backend Service
+- [x] 02-01-PLAN.md — Database Models & Ledger Backend Service
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 02-02-PLAN.md — API Endpoints & Footprint Recalculation
+- [x] 02-02-PLAN.md — API Endpoints & Footprint Recalculation
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 02-03-PLAN.md — Frontend Ledger UI & Data Ingestion
+- [x] 02-03-PLAN.md — Frontend Ledger UI & Data Ingestion
 
 ## Phase 3: The Summary, Enhanced
 
