@@ -11,8 +11,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.208",
+    "ai": "^6.0.206",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^1.18.0",
     "next": "16.2.9",
     "radix-ui": "^1.5.0",
