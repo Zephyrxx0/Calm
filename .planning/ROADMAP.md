@@ -16,6 +16,7 @@ This document outlines the high-level development phases for the Calm project.
 
 **Plans:** 4 plans
 Plans:
+
 - [ ] 01-01-PLAN.md — Tech Spike: Setup DB and core SQLAlchemy models
 - [ ] 01-02-PLAN.md — Design System: Typography, colors, and Landing Page
 - [ ] 01-03-PLAN.md — AI Coach Backend: Gemini integration and Carbon Model
@@ -24,11 +25,26 @@ Plans:
 ## Phase 2: The Ledger
 
 *   **Objective:** Add data ingestion capabilities.
+*   **Requirements:** [OCR-Integration, Ledger-View, Profile-Update]
 *   **Key deliverables:**
     *   Integration with an OCR service (e.g., using Claude as suggested or another service).
     *   A new "Ledger" view, styled as a financial column, to display itemized carbon entries.
     *   Ability for the system to update a user's carbon profile based on ledger entries.
     *   Introduce user accounts to persist data.
+*   **Goal:** Extend the interview session with an organic ledger allowing users to upload receipts and bills for automated carbon data extraction and dynamic footprint recalculation.
+
+**Plans:** 3 plansPlans:
+**Wave 1**
+
+- [ ] 02-01-PLAN.md — Database Models & Ledger Backend Service
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 02-02-PLAN.md — API Endpoints & Footprint Recalculation
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 02-03-PLAN.md — Frontend Ledger UI & Data Ingestion
 
 ## Phase 3: The Summary, Enhanced
 
