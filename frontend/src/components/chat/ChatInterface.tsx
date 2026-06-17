@@ -28,6 +28,11 @@ export default function ChatInterface({ sessionId, initialMessage }: ChatInterfa
     transport,
   });
 
+  // Debug status
+  useEffect(() => {
+    console.log("[Chat] useChat status:", status, "messages:", messages.length);
+  }, [status, messages.length]);
+
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,12 +40,15 @@ export default function ChatInterface({ sessionId, initialMessage }: ChatInterfa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[Chat] handleSubmit", { input: input.trim(), status });
     if (!input.trim() || status !== "ready") return;
+    console.log("[Chat] calling sendMessage with:", input);
     sendMessage({ text: input });
     setInput("");
   };
 
   const handleQuickAnswer = (answer: string) => {
+    console.log("[Chat] handleQuickAnswer", { answer, status });
     if (status !== "ready") return;
     sendMessage({ text: answer });
   };
