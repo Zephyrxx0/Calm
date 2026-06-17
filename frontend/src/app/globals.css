@@ -12,8 +12,8 @@
   --color-surface: #ffffff;
   --color-muted: #73726d;
   --color-muted-light: #a3a29d;
-  --color-accent: #4b5e40;
-  --color-accent-hover: #3d4d34;
+  --color-accent: #c2856b;
+  --color-accent-hover: #b07052;
   --color-border: #e3dfd3;
 
   /* ── shadcn component tokens ── */
@@ -120,6 +120,14 @@
   body {
     @apply bg-background text-foreground;
     line-height: 1.6;
+  }
+  /* Hide scrollbars globally */
+  html, body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none;
   }
   h1, h2, h3 {
     font-family: var(--font-serif), Georgia, "Times New Roman", serif;

@@ -10,5 +10,8 @@
   "design_references": [
     "https://www.tasteskill.dev/docs",
     "Vintage Broadsheet Aesthetic"
-  ]
+  ],
+  "workflow": {
+    "_auto_chain_active": false
+  }
 }

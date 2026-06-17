@@ -14,19 +14,19 @@ function Grain() {
 /* ─── Floating Nav ─── */
 function Nav() {
   return (
-    <nav className="fixed top-4 left-4 right-4 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40">
-      <div className="flex items-center justify-between md:justify-start md:gap-8 rounded-full bg-white/70 backdrop-blur-xl ring-1 ring-black/[0.06] px-5 py-2.5 shadow-sm">
-        <span className="text-sm font-medium text-foreground font-serif text-lg">Calm</span>
-        <div className="hidden md:flex items-center gap-8">
+    <nav className="fixed top-6 left-6 right-6 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40">
+      <div className="flex items-center justify-between md:justify-start md:gap-12 rounded-full bg-white/40 backdrop-blur-3xl border border-white/30 px-8 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
+        <span className="text-base font-medium text-foreground font-serif text-xl tracking-[-0.01em]">Calm</span>
+        <div className="hidden md:flex items-center gap-10">
           <a
             href="#manifesto"
-            className="text-sm text-muted hover:text-foreground transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="text-base text-muted hover:text-foreground transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
           >
             About
           </a>
           <a
             href="#process"
-            className="text-sm text-muted hover:text-foreground transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+            className="text-base text-muted hover:text-foreground transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
           >
             How it works
           </a>
@@ -57,14 +57,6 @@ function Hero() {
 
       {/* Content */}
       <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
-        {/* Eyebrow Tag */}
-        <span
-          className="inline-block rounded-full bg-white/10 backdrop-blur-sm px-4 py-1.5 text-[10px] uppercase tracking-[0.2em] font-medium text-white/80 mb-8 animate-fade-up"
-          style={{ animationDelay: "0.1s", opacity: 0 }}
-        >
-          Carbon Awareness
-        </span>
-
         {/* Massive Heading */}
         <h1
           className="text-[clamp(3.5rem,9vw,7rem)] font-normal leading-[1.02] tracking-[-0.03em] text-white mb-8 animate-fade-up"
@@ -84,15 +76,15 @@ function Hero() {
         {/* CTA Button with Button-in-Button */}
         <div
           className="animate-fade-up"
-          style={{ animationDelay: "0.5s", opacity: 0 }}
+          style={{ animationDelay: "0.35s", opacity: 0 }}
         >
           <Link
             href="/interview"
-            className="group inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 text-sm font-medium text-foreground shadow-lg transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+            className="group inline-flex items-center gap-3 rounded-full bg-white/25 backdrop-blur-2xl border border-white/40 px-8 py-4 text-sm font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/35 hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Begin Your Interview</span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/10 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-foreground">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-white">
                 <path
                   d="M5.25 10.5L8.75 7L5.25 3.5"
                   stroke="currentColor"
@@ -153,8 +145,8 @@ function Manifesto() {
             }`}
           >
             {/* Card 1 */}
-            <div className="bg-black/[0.03] ring-1 ring-black/[0.06] p-2 rounded-[2rem]">
-              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1)]">
+            <div className="p-2 rounded-[2rem]">
+              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 h-full">
                 <div className="flex items-start gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-accent">
@@ -182,8 +174,8 @@ function Manifesto() {
             </div>
 
             {/* Card 2 */}
-            <div className="bg-black/[0.03] ring-1 ring-black/[0.06] p-2 rounded-[2rem]">
-              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1)]">
+            <div className="p-2 rounded-[2rem]">
+              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 h-full">
                 <div className="flex items-start gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-accent">
@@ -257,8 +249,8 @@ function Process() {
               card1Visible ? "translate-y-0 opacity-100 blur-0" : "translate-y-12 opacity-0 blur-sm"
             }`}
           >
-            <div className="bg-black/[0.03] ring-1 ring-black/[0.06] p-2 rounded-[2rem] h-full">
-              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-10 md:p-12 shadow-[inset_0_1px_1px_rgba(255,255,255,1)] h-full flex flex-col justify-between">
+            <div className="p-2 rounded-[2rem] h-full">
+              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-10 md:p-12 h-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-6">
                     <span className="text-xs font-medium text-accent uppercase tracking-wider font-sans">Step 01</span>
@@ -296,8 +288,8 @@ function Process() {
               card2Visible ? "translate-y-0 opacity-100 blur-0" : "translate-y-12 opacity-0 blur-sm"
             }`}
           >
-            <div className="bg-black/[0.03] ring-1 ring-black/[0.06] p-2 rounded-[2rem]">
-              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1)]">
+            <div className="p-2 rounded-[2rem]">
+              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 h-full">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-xs font-medium text-accent uppercase tracking-wider font-sans">Step 02</span>
                 </div>
@@ -333,8 +325,8 @@ function Process() {
               card3Visible ? "translate-y-0 opacity-100 blur-0" : "translate-y-12 opacity-0 blur-sm"
             }`}
           >
-            <div className="bg-black/[0.03] ring-1 ring-black/[0.06] p-2 rounded-[2rem]">
-              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 shadow-[inset_0_1px_1px_rgba(255,255,255,1)]">
+            <div className="p-2 rounded-[2rem]">
+              <div className="bg-surface rounded-[calc(2rem-0.5rem)] p-8 h-full">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-xs font-medium text-accent uppercase tracking-wider font-sans">Step 03</span>
                 </div>
