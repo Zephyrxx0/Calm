@@ -35,6 +35,8 @@ export default function SummaryPage({
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [benchmarkMode, setBenchmarkMode] = useState<"Global" | "National">("Global");
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const summaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,6 +77,52 @@ export default function SummaryPage({
       console.error("Export failed:", err);
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!summaryRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const dataUrl = await toPng(summaryRef.current, {
+        quality: 0.95,
+        backgroundColor: "#FAFAF8",
+        pixelRatio: 2,
+      });
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => { img.onload = resolve; });
+      const ratio = img.height / img.width;
+      const imgWidth = pageWidth - 20;
+      const imgHeight = imgWidth * ratio;
+      pdf.addImage(dataUrl, "PNG", 10, 10, imgWidth, imgHeight);
+      pdf.save(`calm-summary-${sessionId.slice(0, 8)}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleShareLink = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const response = await fetch(`/api/snapshot?session_id=${sessionId}`, {
+        method: "POST",
+      });
+      if (!response.ok) throw new Error("Failed to create share link");
+      const { snapshot_id } = await response.json();
+      const url = `${window.location.origin}/share/${snapshot_id}`;
+      setShareUrl(url);
+      await navigator.clipboard.writeText(url);
+    } catch (err) {
+      console.error("Share failed:", err);
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -128,17 +176,25 @@ export default function SummaryPage({
         </Link>
         <div className="flex gap-3">
           <button
-            onClick={() => window.print()}
-            className="rounded-lg border border-border bg-surface px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            onClick={handleShareLink}
+            disabled={sharing}
+            className="rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
           >
-            Print / PDF
+            {shareUrl ? "✓ Link Copied" : sharing ? "Sharing..." : "Share Link"}
+          </button>
+          <button
+            onClick={handleExportPdf}
+            disabled={exporting}
+            className="rounded-lg border border-border bg-surface px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+          >
+            Download PDF
           </button>
           <button
             onClick={handleExportImage}
             disabled={exporting}
             className="rounded-lg border border-border bg-surface px-4 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
           >
-            {exporting ? "Exporting..." : "Export Image"}
+            {exporting ? "Exporting..." : "Download Image"}
           </button>
         </div>
       </div>
