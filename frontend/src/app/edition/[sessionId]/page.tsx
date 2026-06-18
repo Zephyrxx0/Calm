@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { toPng } from "html-to-image";
 import Link from "next/link";
+import { OrganicBarChart } from "@/components/charts/OrganicBar";
 
 interface SummaryData {
   session_id: string;
@@ -12,6 +13,15 @@ interface SummaryData {
   };
   messages: Array<{ role: string; content: string }>;
   quotes: string[];
+  benchmarks: {
+    global: number;
+    national: number;
+    label: string;
+  };
+  insights: {
+    summary: string;
+    recommendations: string[];
+  };
 }
 
 export default function SummaryPage({
@@ -24,6 +34,7 @@ export default function SummaryPage({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [benchmarkMode, setBenchmarkMode] = useState<"Global" | "National">("Global");
   const summaryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,12 +46,9 @@ export default function SummaryPage({
 
     async function fetchSummary() {
       try {
-        const response = await fetch(`/api/edition/${sessionId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch summary data");
-        }
-        const summaryData = await response.json();
-        setData(summaryData);
+        const response = await fetch(`/api/edition/${sessionId}?country=US`);
+        if (!response.ok) throw new Error("Failed to fetch summary data");
+        setData(await response.json());
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -96,12 +104,21 @@ export default function SummaryPage({
     );
   }
 
-  const { footprint, quotes } = data;
+  const { footprint, quotes, benchmarks, insights } = data;
   const totalTons = (footprint.total_co2e / 1000).toFixed(1);
+
+  // Prepare chart data
+  const chartData = Object.entries(footprint.breakdown).map(([name, co2e]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    value: Number((co2e / 1000).toFixed(2)),
+  }));
+
+  const comparisonValue =
+    benchmarkMode === "Global" ? benchmarks.global : benchmarks.national;
 
   return (
     <main className="flex flex-1 flex-col min-h-screen">
-      {/* Action bar (hidden in print) */}
+      {/* Action bar */}
       <div className="print:hidden border-b border-border px-6 py-3 flex justify-between items-center">
         <Link
           href="/"
@@ -148,14 +165,41 @@ export default function SummaryPage({
               {totalTons}
             </p>
             <p className="text-lg text-muted mt-2">tonnes CO₂e / year</p>
-            <p className="text-xs text-muted-light mt-4">
-              The global average is approximately 4.0 tonnes per person.
-            </p>
           </div>
 
-          {/* Pull quotes / insights */}
+          {/* AI Insights */}
+          {insights && (
+            <section className="mb-10 border-y border-border py-8">
+              <h2 className="text-lg font-semibold mb-4">The Journalist&apos;s Note</h2>
+              <p className="text-base leading-relaxed text-foreground/80 mb-6">
+                {insights.summary}
+              </p>
+              {insights.recommendations.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted uppercase tracking-wide mb-3">
+                    Top Actions
+                  </h3>
+                  <ul className="space-y-2">
+                    {insights.recommendations.map((rec, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-3 text-sm text-foreground/80"
+                      >
+                        <span className="text-accent font-medium shrink-0">
+                          {i + 1}.
+                        </span>
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Pull quotes */}
           {quotes.length > 0 && (
-            <div className="border-y border-border py-6 mb-10">
+            <div className="py-6 mb-10">
               {quotes.map((quote, i) => (
                 <blockquote
                   key={i}
@@ -167,46 +211,64 @@ export default function SummaryPage({
             </div>
           )}
 
-          {/* Category breakdown */}
+          {/* Category breakdown chart */}
           <section className="mb-10">
             <h2 className="text-xl font-semibold mb-6">
               Breakdown by Category
             </h2>
-            <div className="space-y-4">
-              {Object.entries(footprint.breakdown).map(([category, co2e]) => {
-                const percentage = (
-                  (co2e / footprint.total_co2e) *
-                  100
-                ).toFixed(0);
-                return (
-                  <div key={category} className="rounded-xl bg-surface p-4 shadow-sm">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-medium text-sm capitalize">
-                        {category}
-                      </h3>
-                      <p className="text-sm font-semibold">
-                        {(co2e / 1000).toFixed(1)}t
-                      </p>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div
-                        className="bg-accent h-2 rounded-full transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-light mt-1">
-                      {percentage}% of total
-                    </p>
-                  </div>
-                );
-              })}
+            <OrganicBarChart data={chartData} unit="t" />
+          </section>
+
+          {/* Benchmark comparison */}
+          <section className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">How You Compare</h2>
+              <div className="flex rounded-lg border border-border overflow-hidden">
+                <button
+                  onClick={() => setBenchmarkMode("Global")}
+                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                    benchmarkMode === "Global"
+                      ? "bg-accent text-white"
+                      : "bg-surface text-muted hover:text-foreground"
+                  }`}
+                >
+                  Global
+                </button>
+                <button
+                  onClick={() => setBenchmarkMode("National")}
+                  className={`px-3 py-1 text-xs font-medium transition-colors ${
+                    benchmarkMode === "National"
+                      ? "bg-accent text-white"
+                      : "bg-surface text-muted hover:text-foreground"
+                  }`}
+                >
+                  National
+                </button>
+              </div>
+            </div>
+            <div className="rounded-xl bg-surface p-6 shadow-sm">
+              <div className="flex items-end gap-8 justify-center">
+                <div className="text-center">
+                  <p className="text-3xl font-semibold">{totalTons}t</p>
+                  <p className="text-xs text-muted mt-1">You</p>
+                </div>
+                <div className="text-center opacity-60">
+                  <p className="text-3xl font-semibold">{comparisonValue}t</p>
+                  <p className="text-xs text-muted mt-1">
+                    {benchmarkMode === "Global"
+                      ? "Global Avg"
+                      : benchmarks.label}
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
           {/* Footer */}
           <footer className="border-t border-border pt-6 mt-10 text-center">
             <p className="text-xs text-muted-light">
-              Generated by Calm — {new Date().toLocaleDateString("en-US", {
+              Generated by Calm —{" "}
+              {new Date().toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -216,7 +278,6 @@ export default function SummaryPage({
         </div>
       </div>
 
-      {/* Print styles */}
       <style jsx global>{`
         @media print {
           body {
