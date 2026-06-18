@@ -57,11 +57,18 @@ Plans:
     *   Sharing capabilities for the generated report.
 *   **Goal:** Transform the summary into a high-value, shareable carbon edition with organic visualizations, personalized AI insights, and public read-only links.
 
-**Plans:** 3 plans
-Plans:
+**Plans:** 4 plansPlans:
+**Wave 1**
 
+- [ ] 03-00-PLAN.md — Scaffolding: Dependencies and Test Files
 - [ ] 03-01-PLAN.md — Snapshot Persistence & Benchmarks
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 03-02-PLAN.md — Enhanced Visualization & Insights
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 03-03-PLAN.md — Sharing, Export & Public Links
 
 ## Phase 4: Refinement & Growth
