@@ -49,11 +49,20 @@ Plans:
 ## Phase 3: The Summary, Enhanced
 
 *   **Objective:** Enhance the output and reporting.
+*   **Requirements:** [DETAIL-SUMMARY, BENCHMARKS, VISUALIZATIONS, SHARING]
 *   **Key deliverables:**
     *   More detailed breakdown and insights in the summary.
     *   Actionable recommendations and comparisons (e.g., vs. national average).
     *   Data visualizations with the calm design language.
     *   Sharing capabilities for the generated report.
+*   **Goal:** Transform the summary into a high-value, shareable carbon edition with organic visualizations, personalized AI insights, and public read-only links.
+
+**Plans:** 3 plans
+Plans:
+
+- [ ] 03-01-PLAN.md — Snapshot Persistence & Benchmarks
+- [ ] 03-02-PLAN.md — Enhanced Visualization & Insights
+- [ ] 03-03-PLAN.md — Sharing, Export & Public Links
 
 ## Phase 4: Refinement & Growth
 
