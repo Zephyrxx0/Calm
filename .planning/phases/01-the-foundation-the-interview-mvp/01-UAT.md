@@ -8,10 +8,6 @@ updated: 2026-06-17T22:05:00Z
 
 ## Current Test
 
-number: 5
-name: Send a Message
-expected: |
-  Type a response in the text input and press Enter or click Send. AI streams a response back with typewriter effect. Messages appear in scrollable history.
 testing complete
 
 ## Tests
@@ -36,37 +32,33 @@ result: pass
 reported: "no greeting message, direct question related commute"
 
 ### 5. Send a Message
-expected: Type a response in the text input and press Enter or click Send. AI streams a response back with typewriter effect. Messages appear in scrollable history.
-result: issue
-reported: "No response whatsoever, also when I send a message, the previous question is deleted"
-severity: major
+expected: Type a response in the text input and press Enter or click Send. AI streams a response back. Messages appear in scrollable history.
+result: pass
 
 ### 6. Quick-Answer Buttons
 expected: Click one of the quick-answer buttons (0-5, 5-20, 20+, Skip). Message is sent to AI and response streams back.
-result: blocked
-blocked_by: prior-phase
-reason: "Cannot test — message sending is broken (Test 5)"
+result: pass
 
 ### 7. Edition Page
 expected: Navigate to /edition/[sessionId]. See footprint total (tonnes CO₂e/year), category breakdown bars, and pull quotes from interview.
-result: blocked
-blocked_by: prior-phase
-reason: "Cannot test — interview cannot complete due to broken message sending (Test 5)"
+result: issue
+reported: "cannot navigate to edition. Also the chat is very barrent, doesnt reply in a good way."
+severity: major
 
 ### 8. Edition Export
 expected: On edition page, click "Export Image" button. A PNG file downloads with the edition layout. Clicking "Print / PDF" opens browser print dialog.
 result: blocked
 blocked_by: prior-phase
-reason: "Cannot test — interview cannot complete due to broken message sending (Test 5)"
+reason: "Cannot test — cannot navigate to edition page (Test 7)"
 
 ## Summary
 
 total: 8
-passed: 4
+passed: 6
 issues: 1
 pending: 0
 skipped: 0
-blocked: 3
+blocked: 1
 
 ## Gaps
 
@@ -79,11 +71,11 @@ blocked: 3
   missing: []
   root_cause: ""
 
-- truth: "AI streams a response back when user sends a message"
+- truth: "Navigate to /edition/[sessionId] to see carbon footprint summary"
   status: failed
-  reason: "User reported: No response whatsoever, also when I send a message, the previous question is deleted"
+  reason: "User reported: cannot navigate to edition. Also the chat is very barrent, doesnt reply in a good way."
   severity: major
-  test: 5
+  test: 7
   artifacts: []
   missing: []
   root_cause: ""
