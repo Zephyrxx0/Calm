@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import interview, edition, ledger
+from app.api import interview, edition, ledger, snapshot
 
 app = FastAPI(title="Calm API", version="0.1.0")
 
@@ -16,3 +16,4 @@ app.add_middleware(
 app.include_router(interview.router, prefix="/api")
 app.include_router(edition.router, prefix="/api")
 app.include_router(ledger.router, prefix="/api")
+app.include_router(snapshot.router, prefix="/api")
