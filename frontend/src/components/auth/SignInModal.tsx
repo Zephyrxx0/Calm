@@ -93,17 +93,17 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end md:justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
         onClick={() => onOpenChange(false)}
       />
 
-      {/* Auth panel — right side on desktop, full-width on mobile */}
-      <div className="relative z-10 w-full max-w-md mx-4 md:mx-0 md:mr-16 animate-fade-in">
+      {/* Auth panel — centered */}
+      <div className="relative z-10 w-full max-w-md mx-4 animate-fade-in">
         <div
-          className="p-10 md:p-12"
+          className="p-10 md:p-12 shadow-2xl"
           style={{ backgroundColor: "#FDFCF7" }}
         >
           {/* Masthead */}
@@ -202,7 +202,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full border-0 border-b border-[#1A1A1A]/20 bg-transparent py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#c2856b] focus:outline-none transition-colors disabled:opacity-50"
+                className="w-full border border-[#1A1A1A]/15 bg-white px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#c2856b] focus:outline-none transition-colors disabled:opacity-50"
                 style={{ fontFamily: "var(--font-sans), sans-serif" }}
                 placeholder="you@example.com"
               />
@@ -224,7 +224,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
                 required
                 minLength={6}
                 disabled={loading}
-                className="w-full border-0 border-b border-[#1A1A1A]/20 bg-transparent py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#c2856b] focus:outline-none transition-colors disabled:opacity-50"
+                className="w-full border border-[#1A1A1A]/15 bg-white px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#c2856b] focus:outline-none transition-colors disabled:opacity-50"
                 style={{ fontFamily: "var(--font-sans), sans-serif" }}
                 placeholder="••••••"
               />

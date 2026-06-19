@@ -47,9 +47,6 @@ export function AuthButton() {
           <Button variant="ghost" size="sm" className="gap-2">
             <User className="h-4 w-4" />
             {isAnonymous ? "Guest" : user.email || user.displayName || "User"}
-            {isAnonymous && (
-              <span className="text-xs text-muted-foreground">(guest)</span>
-            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
