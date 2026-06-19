@@ -21,7 +21,11 @@ from app.tools import calculate_carbon, end_chat, generate_insights, get_benchma
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-if os.getenv("GOOGLE_API_KEY"):
+# Support both GEMINI_API_KEY (google-genai SDK style) and GOOGLE_API_KEY (ADK style)
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+if api_key:
+    if not os.getenv("GOOGLE_API_KEY"):
+        os.environ["GOOGLE_API_KEY"] = api_key
     os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "False")
 else:
     import google.auth
@@ -440,7 +444,9 @@ root_agent = Agent(
     after_model_callback=intercept_tool_calls,
     generate_content_config=genai_types.GenerateContentConfig(
         temperature=0.7,
-        thinking_config=genai_types.ThinkingConfig(include_thoughts=False),
+        thinking_config=genai_types.ThinkingConfig(
+            thinking_budget=0,
+        ),
     ),
 )
 
