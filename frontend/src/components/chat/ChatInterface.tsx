@@ -174,13 +174,16 @@ export default function ChatInterface({
                   if (t.startsWith("{") && /"(name|commute|travel|home|diet|shopping)"/.test(t)) {
                     continue;
                   }
-                  if (t.startsWith("[CALM_END_CHAT]")) {
+                  if (t.includes("[CALM_END_CHAT]")) {
                     try {
-                      const jsonStr = t.slice("[CALM_END_CHAT]".length);
+                      const markerIndex = t.indexOf("[CALM_END_CHAT]");
+                      const jsonStr = t.slice(markerIndex + "[CALM_END_CHAT]".length);
                       setEndChatData(JSON.parse(jsonStr));
                     } catch {
                       /* ignore parse error */
                     }
+                    // Show text before marker, hide marker + JSON
+                    visibleText += t.slice(0, t.indexOf("[CALM_END_CHAT]"));
                     continue;
                   }
                   visibleText += part.text;
@@ -325,10 +328,13 @@ export default function ChatInterface({
 
             <div className="flex gap-3">
               <button
-                onClick={() => setEndChatData(null)}
+                onClick={() => {
+                  setEndChatData(null);
+                  router.push("/interview");
+                }}
                 className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:bg-surface transition-colors"
               >
-                Close
+                Retake Interview
               </button>
               <button
                 onClick={() =>
@@ -338,7 +344,7 @@ export default function ChatInterface({
                 }
                 className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors active:scale-[0.98]"
               >
-                View Your Edition
+                Proceed to Edition
               </button>
             </div>
           </div>

@@ -306,6 +306,7 @@ async def intercept_tool_calls(
     state = callback_context.state
     if state.get("phase") == "summarizing":
         import json as _json
+        import sys
 
         extracted = state.get("extracted_data", {})
         carbon_result = calculate_carbon(
@@ -320,9 +321,15 @@ async def intercept_tool_calls(
             "breakdown": carbon_result["breakdown"],
             "mode": state.get("mode", "quick"),
         })
-        new_parts.append(
-            genai_types.Part(text=f"\n\n[CALM_END_CHAT]{end_chat_payload}")
-        )
+        print(f"[DEBUG] Appending [CALM_END_CHAT], total={carbon_result['total_tonnes']}", file=sys.stderr)
+
+        # Append to last part instead of adding new part (ensures it's included in SSE stream)
+        if new_parts:
+            last_part = new_parts[-1]
+            last_text = getattr(last_part, "text", "") or ""
+            new_parts[-1] = genai_types.Part(text=f"{last_text}\n\n[CALM_END_CHAT]{end_chat_payload}")
+        else:
+            new_parts.append(genai_types.Part(text=f"[CALM_END_CHAT]{end_chat_payload}"))
 
     llm_response.content.parts = new_parts
     return llm_response
