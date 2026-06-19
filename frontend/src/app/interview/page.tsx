@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import ChatInterface from "@/components/chat/ChatInterface";
 import { DoodleLeaf, DoodleSun } from "@/components/OrganicDoodles";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthButton } from "@/components/auth/AuthButton";
 
 function Grain() {
   return <div className="grain" aria-hidden="true" />;
 }
 
 export default function InterviewPage() {
+  const { user } = useAuth();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
@@ -18,8 +21,17 @@ export default function InterviewPage() {
   useEffect(() => {
     async function startSession() {
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (user) {
+          const token = await user.getIdToken();
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
         const response = await fetch("/api/interview/start", {
           method: "POST",
+          headers,
         });
 
         if (!response.ok) {
@@ -37,6 +49,7 @@ export default function InterviewPage() {
             "Content-Type": "application/json",
             "x-session-id": data.session_id,
             "x-user-id": data.user_id,
+            ...(user ? { Authorization: `Bearer ${await user.getIdToken()}` } : {}),
           },
           body: JSON.stringify({
             messages: [{ role: "user", parts: [{ type: "text", text: "hi" }] }],
@@ -127,14 +140,17 @@ export default function InterviewPage() {
           <p className="text-[10px] font-medium text-muted uppercase tracking-[0.2em]">
             The Interview
           </p>
-          {sessionId && (
-            <a
-              href={`/ledger/${sessionId}`}
-              className="text-xs font-sans text-muted hover:text-foreground transition-colors"
-            >
-              Refine in Ledger →
-            </a>
-          )}
+          <div className="flex items-center gap-4">
+            {sessionId && (
+              <a
+                href={`/ledger/${sessionId}`}
+                className="text-xs font-sans text-muted hover:text-foreground transition-colors"
+              >
+                Refine in Ledger →
+              </a>
+            )}
+            <AuthButton />
+          </div>
         </div>
       </header>
 
