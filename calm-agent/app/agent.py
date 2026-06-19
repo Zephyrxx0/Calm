@@ -16,7 +16,7 @@ from google.adk.models.llm_response import LlmResponse
 from google.genai import types as genai_types
 
 from app.config import CATEGORIES, INTERVIEW_MODES, MAX_INPUT_LENGTH, AgentConfig
-from app.tools import calculate_carbon, generate_insights, get_benchmarks
+from app.tools import calculate_carbon, end_chat, generate_insights, get_benchmarks
 
 env_path = Path(__file__).parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -119,6 +119,8 @@ Present a complete analysis in three clear sections. You may use emojis naturall
    Make each suggestion concrete and achievable.
 
 End with a warm, encouraging closing note.
+
+After presenting the analysis: call the `end_chat` tool with the total_tonnes, breakdown, and mode. This lets the user view their personal Edition.
 
 ### If phase is "complete":
 Answer follow-ups briefly. Stay warm. Suggest they reflect on the recommendations.
@@ -368,6 +370,11 @@ def _execute_tool_from_text(text: str) -> str:
                 "Every small step adds up. Thank you for taking the time to understand your impact."
             )
             return "\n".join(lines)
+    elif tool_name == "end_chat":
+        result = end_chat(**params)
+        if isinstance(result, dict):
+            import json
+            return f"[CALM_END_CHAT]{json.dumps(result)}"
     elif tool_name == "get_benchmarks":
         result = get_benchmarks()
         if isinstance(result, dict):
@@ -396,7 +403,7 @@ root_agent = Agent(
     model=config.model,
     instruction=INTERVIEW_INSTRUCTION,
     description="A calm journalist who interviews you about your lifestyle and estimates your carbon footprint.",
-    tools=[calculate_carbon, get_benchmarks, generate_insights],
+    tools=[calculate_carbon, get_benchmarks, generate_insights, end_chat],
     before_agent_callback=before_interview,
     after_agent_callback=after_interview,
     after_model_callback=intercept_tool_calls,

@@ -1,12 +1,19 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Message {
   id: string;
   role: "user" | "ai";
   text: string;
   thought: string;
+}
+
+interface EndChatData {
+  total_tonnes: number;
+  breakdown: Record<string, number>;
+  mode: string;
 }
 
 interface ChatInterfaceProps {
@@ -20,15 +27,24 @@ export default function ChatInterface({
   userId,
   initialMessage,
 }: ChatInterfaceProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [endChatData, setEndChatData] = useState<EndChatData | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!streaming) {
+      inputRef.current?.focus();
+    }
+  }, [streaming]);
 
   const sendToAI = async (text: string) => {
     const userMsg: Message = {
@@ -105,6 +121,16 @@ export default function ChatInterface({
                   if (t.startsWith("{") && /"(name|commute|travel|home|diet|shopping)"/.test(t)) {
                     continue;
                   }
+                  // Detect end_chat signal
+                  if (t.startsWith("[CALM_END_CHAT]")) {
+                    try {
+                      const jsonStr = t.slice("[CALM_END_CHAT]".length);
+                      setEndChatData(JSON.parse(jsonStr));
+                    } catch {
+                      /* ignore parse error */
+                    }
+                    continue;
+                  }
                   visibleText += part.text;
                 }
               }
@@ -149,6 +175,10 @@ export default function ChatInterface({
     setInput("");
   };
 
+  const totalKg = endChatData
+    ? Object.values(endChatData.breakdown).reduce((a, b) => a + b, 0)
+    : 0;
+
   return (
     <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4">
       {/* Messages */}
@@ -165,7 +195,6 @@ export default function ChatInterface({
 
         {messages.map((m) => (
           <div key={m.id}>
-            {/* Thinking dropdown — above the bubble, for AI only */}
             {m.role === "ai" && m.thought && (
               <details className="mb-1 ml-1 group">
                 <summary className="text-[11px] text-muted/60 hover:text-muted cursor-pointer select-none inline-block transition-colors">
@@ -201,10 +230,62 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Edition dialog */}
+      {endChatData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8">
+            <h2 className="text-xl font-serif text-foreground mb-2">
+              Your Edition is Ready
+            </h2>
+            <p className="text-sm text-muted mb-6">
+              Your carbon footprint has been calculated. Here&apos;s a preview.
+            </p>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted">Total footprint</span>
+                <span className="font-medium text-foreground">
+                  {endChatData.total_tonnes.toFixed(2)} tonnes CO₂e
+                </span>
+              </div>
+              <div className="h-px bg-border" />
+              {Object.entries(endChatData.breakdown).map(([cat, val]) => (
+                <div key={cat} className="flex justify-between text-sm">
+                  <span className="text-muted capitalize">{cat}</span>
+                  <span className="text-foreground">
+                    {val.toFixed(0)} kg ({((val / totalKg) * 100).toFixed(0)}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEndChatData(null)}
+                className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:bg-surface transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() =>
+                  router.push(
+                    `/edition/${sessionId}?total=${endChatData.total_tonnes}&mode=${endChatData.mode}`
+                  )
+                }
+                className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors active:scale-[0.98]"
+              >
+                View Your Edition
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t border-border bg-background py-4">
         <form onSubmit={handleSubmit} className="flex gap-3">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}

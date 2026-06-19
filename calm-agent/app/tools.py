@@ -128,3 +128,30 @@ def generate_insights(total_tonnes: float, breakdown: dict) -> dict:
             recs.append(advice)
 
     return {"summary": summary, "recommendations": recs}
+
+
+def end_chat(
+    total_tonnes: float,
+    breakdown: dict,
+    mode: str = "quick",
+) -> dict:
+    """Signal interview completion and trigger the edition handoff.
+
+    Call this after presenting the full analysis to the user.
+    The frontend will show a dialog to propagate interview values
+    to the edition/print view.
+
+    Args:
+        total_tonnes: Total annual footprint in tonnes CO2e.
+        breakdown: Dict mapping category names to kg CO2e/year.
+        mode: Interview mode used (quick or detailed).
+
+    Returns:
+        Dict with status, summary data for the edition.
+    """
+    return {
+        "status": "complete",
+        "total_tonnes": total_tonnes,
+        "breakdown": breakdown,
+        "mode": mode,
+    }
