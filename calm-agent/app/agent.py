@@ -80,34 +80,45 @@ Then wait for their choice. Do NOT ask anything else until they choose.
 If the user HAS already chosen a mode (they said "quick" or "detailed" in their last message), skip the intro. Acknowledge their choice and start the interview by asking your first question about commute.
 
 ### If phase is "interviewing":
-Ask ONE question at a time. Rotate through these categories:
-- **commute**: How they get around (mode, distance)
-- **travel**: Flights (how many, short or long haul)
-- **home**: Energy type, household size
-- **diet**: Eating habits (meat, vegetarian, vegan, etc.)
-- **shopping**: Consumption level (minimal, average, heavy)
+Ask ONE question at a time. Each question must include a natural "for example" clause so the user knows what kind of answer to give.
+
+Rotate through these categories:
+- **commute**: How they get around and daily distance. For example: "Do you drive, take the bus, or cycle?"
+- **travel**: Flights per year and type. For example: "Do you fly short haul or long haul?"
+- **home**: Energy type and household size. For example: "Do you use gas, electric, or renewable energy?"
+- **diet**: Eating habits. For example: "Are you a meat-eater, vegetarian, or vegan?"
+- **shopping**: Consumption frequency and buying habits. For example: "Do you buy things minimally, or shop frequently?"
 
 Spend roughly equal questions per category ({max_questions // 5} each).
 
-CRITICAL: You are ONLY an interviewer. Do NOT calculate or call tools. Do NOT summarize. Keep asking until the phase changes.
+CRITICAL RULES:
+- Do NOT use emojis, decorative symbols, or special characters.
+- You are ONLY an interviewer. Do NOT calculate or call tools.
+- Do NOT summarize. Keep asking until the phase changes.
 
 ### If phase is "summarizing":
-Present the results in short, clear points:
+Present a complete analysis in three clear sections. You may use emojis naturally here based on the tone of the results.
 
-• Your estimated annual footprint: ___ tonnes CO₂e
-• How you compare: [below/above] the global average of 4.7 tonnes
-• Breakdown by category:
-  - Commute: ___
-  - Travel: ___
-  - Home: ___
-  - Diet: ___
-  - Shopping: ___
-• Three things you could try:
-  1. ___
-  2. ___
-  3. ___
+1. YOUR FOOTPRINT:
+   • Total: ___ tonnes CO₂e per year
+   • Breakdown by category (include estimated percentage of total):
+     - Commute: ___ kg (__%)
+     - Travel: ___ kg (__%)
+     - Home: ___ kg (__%)
+     - Diet: ___ kg (__%)
+     - Shopping: ___ kg (__%)
+   • How you compare to the global average of 4.7 tonnes
 
-End with a warm closing note.
+2. WHAT THIS MEANS:
+   Comment on the biggest contributor and what's working well.
+   Reference their actual answers (e.g., their chosen diet, commute mode).
+
+3. PRACTICAL SUGGESTIONS:
+   2-3 specific, actionable tips tailored to their lifestyle.
+   For example, if they eat meat, suggest plant-based swaps; if they drive, suggest alternatives.
+   Make each suggestion concrete and achievable.
+
+End with a warm, encouraging closing note.
 
 ### If phase is "complete":
 Answer follow-ups briefly. Stay warm. Suggest they reflect on the recommendations.
@@ -316,16 +327,46 @@ def _execute_tool_from_text(text: str) -> str:
     result = None
     if tool_name == "calculate_carbon":
         result = calculate_carbon(**params)
-        # Format conversationally instead of raw JSON
         if isinstance(result, dict):
             t = result.get("total_tonnes", 0)
             bd = result.get("breakdown", {})
+            total_kg = sum(bd.values()) or 1
+
             lines = [
                 f"Your estimated annual footprint: {t:.2f} tonnes CO₂e",
+                "",
                 "Breakdown:",
             ]
             for cat, val in bd.items():
-                lines.append(f"  • {cat}: {val:.0f} kg")
+                pct = (val / total_kg) * 100
+                lines.append(f"  • {cat}: {val:.0f} kg ({pct:.0f}%)")
+
+            # Benchmark comparison
+            benchmarks = get_benchmarks()
+            global_avg = 4.7
+            if benchmarks.get("benchmarks"):
+                global_avg = benchmarks["benchmarks"].get("global", 4.7)
+            comparison = "below" if t < global_avg else "above"
+            lines.append("")
+            lines.append(
+                f"You are {comparison} the global average of {global_avg} tonnes."
+            )
+
+            # Insights and suggestions
+            insights = generate_insights(total_tonnes=t, breakdown=bd)
+            if insights.get("summary"):
+                lines.append("")
+                lines.append(insights["summary"])
+            if insights.get("recommendations"):
+                lines.append("")
+                lines.append("Suggestions:")
+                for i, r in enumerate(insights["recommendations"], 1):
+                    lines.append(f"  {i}. {r}")
+
+            lines.append("")
+            lines.append(
+                "Every small step adds up. Thank you for taking the time to understand your impact."
+            )
             return "\n".join(lines)
     elif tool_name == "get_benchmarks":
         result = get_benchmarks()
