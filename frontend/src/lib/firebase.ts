@@ -14,7 +14,10 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Connect to Firebase Auth emulator in development
-if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+// Connect to Firebase Auth emulator only if explicitly enabled
+if (
+  process.env.NEXT_PUBLIC_USE_AUTH_EMULATOR === "true" &&
+  typeof window !== "undefined"
+) {
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
 }
