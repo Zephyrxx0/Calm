@@ -103,7 +103,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
       {/* Auth panel — centered */}
       <div className="relative z-10 w-full max-w-md mx-4 animate-fade-in">
         <div
-          className="p-10 md:p-12 shadow-2xl"
+          className="p-10 md:p-12 shadow-2xl border border-[#1A1A1A]/10"
           style={{ backgroundColor: "#FDFCF7" }}
         >
           {/* Masthead */}
@@ -132,7 +132,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
             <button
               onClick={handleGitHub}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 border border-[#1A1A1A]/15 px-5 py-3 text-sm font-sans text-[#1A1A1A] hover:bg-[#1A1A1A]/[0.04] transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 border border-[#1A1A1A]/15 bg-white px-5 py-3 text-sm font-sans text-[#1A1A1A] hover:bg-[#1A1A1A]/[0.04] transition-colors disabled:opacity-50"
               style={{ fontFamily: "var(--font-sans), sans-serif" }}
             >
               <GithubIcon />
@@ -142,7 +142,7 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
             <button
               onClick={handleAnonymous}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 border border-[#1A1A1A]/15 px-5 py-3 text-sm font-sans text-[#1A1A1A] hover:bg-[#1A1A1A]/[0.04] transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 border border-[#1A1A1A]/15 bg-white px-5 py-3 text-sm font-sans text-[#1A1A1A] hover:bg-[#1A1A1A]/[0.04] transition-colors disabled:opacity-50"
               style={{ fontFamily: "var(--font-sans), sans-serif" }}
             >
               Continue as guest
