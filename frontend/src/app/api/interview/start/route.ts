@@ -1,26 +1,35 @@
 import { NextResponse } from "next/server";
+import { nanoid } from "nanoid";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+const AGENT_URL = process.env.AGENT_URL || "http://localhost:8000";
 
 export async function POST() {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/interview/start`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const userId = `user-${nanoid(12)}`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    const sessionRes = await fetch(
+      `${AGENT_URL}/apps/app/users/${userId}/sessions`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }
+    );
+
+    if (!sessionRes.ok) {
+      const errorText = await sessionRes.text();
       return NextResponse.json(
-        { error: "Backend error", details: errorText },
-        { status: response.status }
+        { error: "Failed to create session", details: errorText },
+        { status: sessionRes.status }
       );
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    const sessionData = await sessionRes.json();
+
+    return NextResponse.json({
+      session_id: sessionData.id,
+      user_id: userId,
+    });
   } catch (error) {
     console.error("Start interview error:", error);
     return NextResponse.json(

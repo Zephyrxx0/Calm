@@ -42,7 +42,7 @@ describe("ChatInterface", () => {
       error: null,
     });
 
-    render(<ChatInterface sessionId="test-session-123" />);
+    render(<ChatInterface sessionId="test-session-123" userId="test-user-123" />);
 
     // Should render messages in a scrollable container
     const messageList = screen.getByRole("log");
@@ -55,7 +55,7 @@ describe("ChatInterface", () => {
   });
 
   it("renders hybrid input with text box and quick-answer buttons", () => {
-    render(<ChatInterface sessionId="test-session-123" />);
+    render(<ChatInterface sessionId="test-session-123" userId="test-user-123" />);
 
     // Should have a text input
     const textbox = screen.getByRole("textbox");
@@ -73,7 +73,7 @@ describe("ChatInterface", () => {
   });
 
   it("initializes useChat with correct API endpoint and session ID", () => {
-    render(<ChatInterface sessionId="test-session-456" />);
+    render(<ChatInterface sessionId="test-session-456" userId="test-user-456" />);
 
     // useChat should be called
     expect(mockUseChat).toHaveBeenCalled();

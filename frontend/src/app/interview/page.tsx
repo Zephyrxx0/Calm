@@ -10,6 +10,7 @@ function Grain() {
 
 export default function InterviewPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +28,52 @@ export default function InterviewPage() {
 
         const data = await response.json();
         setSessionId(data.session_id);
-        setInitialMessage(data.initial_message || null);
+        setUserId(data.user_id);
+
+        // Fetch the greeting message so the bot speaks first
+        const greetRes = await fetch("/api/interview/message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-session-id": data.session_id,
+            "x-user-id": data.user_id,
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", parts: [{ type: "text", text: "hi" }] }],
+          }),
+        });
+
+        if (greetRes.ok && greetRes.body) {
+          const reader = greetRes.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let visibleText = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                try {
+                  const ev = JSON.parse(line.slice(6));
+                  if (!ev.content?.parts) continue;
+                  const isFinal = !!ev.finishReason;
+                  for (const p of ev.content.parts) {
+                    if (!p.thought && p.text) {
+                      visibleText = isFinal ? p.text : visibleText + p.text;
+                    }
+                  }
+                } catch {
+                  /* skip */
+                }
+              }
+            }
+          }
+          setInitialMessage(visibleText || null);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -43,7 +89,9 @@ export default function InterviewPage() {
       <main className="flex flex-1 items-center justify-center bg-background relative overflow-hidden h-screen">
         <Grain />
         <DoodleSun className="absolute top-1/4 right-1/4 w-32 h-32 text-accent/10 animate-pulse" />
-        <p className="text-sm text-muted font-sans relative z-10">Preparing your space...</p>
+        <p className="text-sm text-muted font-sans relative z-10">
+          Preparing your space...
+        </p>
       </main>
     );
   }
@@ -56,7 +104,7 @@ export default function InterviewPage() {
     );
   }
 
-  if (!sessionId) {
+  if (!sessionId || !userId) {
     return null;
   }
 
@@ -70,7 +118,12 @@ export default function InterviewPage() {
       {/* Header */}
       <header className="border-b border-border/50 px-6 py-5 relative z-10 bg-background/50 backdrop-blur-md">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <a href="/" className="text-lg font-serif text-foreground hover:text-accent transition-colors">Calm</a>
+          <a
+            href="/"
+            className="text-lg font-serif text-foreground hover:text-accent transition-colors"
+          >
+            Calm
+          </a>
           <p className="text-[10px] font-medium text-muted uppercase tracking-[0.2em]">
             The Interview
           </p>
@@ -87,7 +140,11 @@ export default function InterviewPage() {
 
       {/* Chat Interface */}
       <div className="flex-1 flex flex-col relative z-10 h-[calc(100vh-69px)]">
-        <ChatInterface sessionId={sessionId} initialMessage={initialMessage} />
+        <ChatInterface
+          sessionId={sessionId}
+          userId={userId}
+          initialMessage={initialMessage}
+        />
       </div>
     </main>
   );
