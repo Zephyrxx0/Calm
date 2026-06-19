@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { SignInModal } from "@/components/auth/SignInModal";
 
 const PUBLIC_PATHS = ["/"];
 
@@ -11,7 +10,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [showSignIn, setShowSignIn] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -22,11 +20,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (!user && !isPublic) {
       router.replace("/");
-      return;
-    }
-
-    if (!user && pathname === "/") {
-      setShowSignIn(true);
     }
   }, [user, loading, pathname, router]);
 
@@ -46,10 +39,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  return (
-    <>
-      {children}
-      <SignInModal open={showSignIn} onOpenChange={setShowSignIn} />
-    </>
-  );
+  return <>{children}</>;
 }
