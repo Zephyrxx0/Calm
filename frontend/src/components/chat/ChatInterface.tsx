@@ -36,6 +36,11 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Typing animation refs
+  const pendingBufferRef = useRef("");
+  const currentAiIdRef = useRef<string | null>(null);
+  const rafRef = useRef<number | null>(null);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -44,6 +49,50 @@ export default function ChatInterface({
     if (!streaming) {
       inputRef.current?.focus();
     }
+  }, [streaming]);
+
+  // Smooth typing animation — drains pendingBufferRef char-by-char into display
+  useEffect(() => {
+    if (!streaming) {
+      if (pendingBufferRef.current) {
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== currentAiIdRef.current) return m;
+            return { ...m, text: m.text + pendingBufferRef.current };
+          })
+        );
+        pendingBufferRef.current = "";
+      }
+      return;
+    }
+
+    let active = true;
+
+    const drip = () => {
+      if (!active) return;
+      const len = Math.min(4, pendingBufferRef.current.length);
+      if (len > 0) {
+        const chunk = pendingBufferRef.current.slice(0, len);
+        pendingBufferRef.current = pendingBufferRef.current.slice(len);
+        setMessages((prev) =>
+          prev.map((m) => {
+            if (m.id !== currentAiIdRef.current) return m;
+            return { ...m, text: m.text + chunk };
+          })
+        );
+      }
+      rafRef.current = requestAnimationFrame(drip);
+    };
+
+    rafRef.current = requestAnimationFrame(drip);
+
+    return () => {
+      active = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
   }, [streaming]);
 
   const sendToAI = async (text: string) => {
@@ -56,8 +105,12 @@ export default function ChatInterface({
     setMessages((prev) => [...prev, userMsg]);
     setStreaming(true);
 
+    const aiMsgId = crypto.randomUUID();
+    currentAiIdRef.current = aiMsgId;
+    pendingBufferRef.current = "";
+
     const aiMsg: Message = {
-      id: crypto.randomUUID(),
+      id: aiMsgId,
       role: "ai",
       text: "",
       thought: "",
@@ -121,7 +174,6 @@ export default function ChatInterface({
                   if (t.startsWith("{") && /"(name|commute|travel|home|diet|shopping)"/.test(t)) {
                     continue;
                   }
-                  // Detect end_chat signal
                   if (t.startsWith("[CALM_END_CHAT]")) {
                     try {
                       const jsonStr = t.slice("[CALM_END_CHAT]".length);
@@ -136,24 +188,36 @@ export default function ChatInterface({
               }
 
               if (visibleText || thoughtText) {
-                setMessages((prev) =>
-                  prev.map((m) => {
-                    if (m.id !== aiMsg.id) return m;
-                    const isFinal = !!event.finishReason;
-                    if (isFinal) {
+                const isFinal = !!event.finishReason;
+
+                if (isFinal) {
+                  // Final event replaces everything — set text directly
+                  pendingBufferRef.current = "";
+                  setMessages((prev) =>
+                    prev.map((m) => {
+                      if (m.id !== aiMsgId) return m;
                       return {
                         ...m,
                         text: visibleText || m.text,
                         thought: thoughtText || m.thought,
                       };
-                    }
-                    return {
-                      ...m,
-                      text: m.text + visibleText,
-                      thought: m.thought + thoughtText,
-                    };
-                  })
-                );
+                    })
+                  );
+                } else {
+                  // Partial event — buffer visible text for smooth animation;
+                  // thought text updates immediately
+                  if (thoughtText) {
+                    setMessages((prev) =>
+                      prev.map((m) => {
+                        if (m.id !== aiMsgId) return m;
+                        return { ...m, thought: m.thought + thoughtText };
+                      })
+                    );
+                  }
+                  if (visibleText) {
+                    pendingBufferRef.current += visibleText;
+                  }
+                }
               }
             } catch {
               // parse error, skip
