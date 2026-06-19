@@ -78,3 +78,14 @@ Plans:
     *   Expanding the AI Coach's question set.
     *   Supporting more types of data for the Ledger.
     *   Community or comparative features.
+
+### Phase 04.1: this phase is for the social part, focusing on setting streaks, see carbon footprint analysis and share it. the webapp is supposed to let user track their daily carbon footprint. Might be done by implementing git-like daily input. I dont know how to tackle the storage concern, do we neccesarily need accounts to store items. Anyways, things to add. A newspaper-eqsue format for export of the analysis, etc. I am talkin about actual newspaper, not editorial style. Export the said newspaper analysis in different format - Image(jpeg, png), links, linkedin etc. Daily tracker (similar to git) Need to brainstorm what the user tracks daily. Need to brainstorm neccessity of accounts (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 04.1 to break down)
