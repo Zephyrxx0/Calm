@@ -13,6 +13,12 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
+  signInAnonymously,
+  signInWithPopup,
+  GithubAuthProvider,
+  linkWithCredential,
+  AuthCredential,
+  EmailAuthProvider,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -21,7 +27,11 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInAnonymous: () => Promise<void>;
+  signInGitHub: () => Promise<void>;
   logOut: () => Promise<void>;
+  isAnonymous: boolean;
+  upgradeAnonymous: (email: string, password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,7 +39,11 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signIn: async () => {},
   signUp: async () => {},
+  signInAnonymous: async () => {},
+  signInGitHub: async () => {},
   logOut: async () => {},
+  isAnonymous: false,
+  upgradeAnonymous: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -55,12 +69,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await createUserWithEmailAndPassword(auth, email, password);
   };
 
+  const signInAnonymous = async () => {
+    await signInAnonymously(auth);
+  };
+
+  const signInGitHub = async () => {
+    const provider = new GithubAuthProvider();
+    await signInWithPopup(auth, provider);
+  };
+
   const logOut = async () => {
     await signOut(auth);
   };
 
+  const upgradeAnonymous = async (email: string, password: string) => {
+    if (!user?.isAnonymous) return;
+    const credential = EmailAuthProvider.credential(email, password);
+    await linkWithCredential(user, credential);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, logOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signIn,
+        signUp,
+        signInAnonymous,
+        signInGitHub,
+        logOut,
+        isAnonymous: user?.isAnonymous ?? false,
+        upgradeAnonymous,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
