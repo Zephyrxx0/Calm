@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 function GithubIcon() {
   return (
     <svg
-      className="mr-2 h-4 w-4"
+      style={{ marginRight: 8, width: 16, height: 16 }}
       viewBox="0 0 24 24"
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
@@ -92,173 +92,294 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
 
   if (!open) return null;
 
+  const buttonBase = {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    border: "1px solid rgba(26, 26, 26, 0.15)",
+    background: "#FFFFFF",
+    padding: "12px 20px",
+    fontSize: 14,
+    fontFamily: "var(--font-sans), sans-serif",
+    color: "#1A1A1A",
+    cursor: "pointer",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    border: "1px solid rgba(26, 26, 26, 0.15)",
+    background: "#FFFFFF",
+    padding: "8px 12px",
+    fontSize: 14,
+    fontFamily: "var(--font-sans), sans-serif",
+    color: "#1A1A1A",
+    outline: "none",
+    boxSizing: "border-box" as const,
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-md"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0, 0, 0, 0.5)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+        }}
         onClick={() => onOpenChange(false)}
       />
 
-      {/* Auth panel — centered */}
-      <div className="relative z-10 w-full max-w-md mx-4 animate-fade-in">
-        <div
-          className="p-10 md:p-12 shadow-2xl border border-[#1A1A1A]/10"
-          style={{ backgroundColor: "#FDFCF7" }}
-        >
-          {/* Masthead */}
-          <div className="text-center mb-8">
-            <div className="inline-block border-t border-b border-[#1A1A1A]/20 py-3 px-8 mb-4">
-              <h2
-                className="text-lg tracking-[0.15em] uppercase"
-                style={{
-                  fontFamily: "var(--font-serif), Georgia, serif",
-                  color: "#1A1A1A",
-                }}
-              >
-                Calm
-              </h2>
-            </div>
-            <p
-              className="text-xs tracking-[0.15em] uppercase"
-              style={{ color: "#8a8a7a" }}
-            >
-              {isAnonymous ? "Save Your Progress" : mode === "signin" ? "Sign In" : "Create Account"}
-            </p>
-          </div>
-
-          {/* Providers */}
-          <div className="space-y-3 mb-8">
-            <button
-              onClick={handleGitHub}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 border border-[#1A1A1A]/15 bg-white px-5 py-3 text-sm font-sans text-[#1A1A1A] hover:bg-[#1A1A1A]/[0.04] transition-colors disabled:opacity-50"
-              style={{ fontFamily: "var(--font-sans), sans-serif" }}
-            >
-              <GithubIcon />
-              Continue with GitHub
-            </button>
-
-            <button
-              onClick={handleAnonymous}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 border border-[#1A1A1A]/15 bg-white px-5 py-3 text-sm font-sans text-[#1A1A1A] hover:bg-[#1A1A1A]/[0.04] transition-colors disabled:opacity-50"
-              style={{ fontFamily: "var(--font-sans), sans-serif" }}
-            >
-              Continue as guest
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex-1 h-px bg-[#1A1A1A]/15" />
-            <span className="text-xs tracking-[0.15em] uppercase" style={{ color: "#8a8a7a" }}>
-              or with email
-            </span>
-            <div className="flex-1 h-px bg-[#1A1A1A]/15" />
-          </div>
-
-          {/* Email form */}
-          <div className="flex gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => setMode("signin")}
-              className="flex-1 text-xs tracking-[0.15em] uppercase py-2 border-b-2 transition-colors"
+      {/* Auth panel */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          width: "100%",
+          maxWidth: 400,
+          margin: "0 16px",
+          background: "#FDFCF7",
+          padding: "40px 48px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+          border: "1px solid rgba(26, 26, 26, 0.1)",
+        }}
+      >
+        {/* Masthead */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div
+            style={{
+              display: "inline-block",
+              borderTop: "1px solid rgba(26, 26, 26, 0.2)",
+              borderBottom: "1px solid rgba(26, 26, 26, 0.2)",
+              padding: "12px 32px",
+              marginBottom: 16,
+            }}
+          >
+            <h2
               style={{
-                fontFamily: "var(--font-sans), sans-serif",
-                borderBottomColor: mode === "signin" ? "#c2856b" : "transparent",
-                color: mode === "signin" ? "#1A1A1A" : "#8a8a7a",
+                fontSize: 18,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                fontFamily: "var(--font-serif), Georgia, serif",
+                color: "#1A1A1A",
+                margin: 0,
               }}
             >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className="flex-1 text-xs tracking-[0.15em] uppercase py-2 border-b-2 transition-colors"
-              style={{
-                fontFamily: "var(--font-sans), sans-serif",
-                borderBottomColor: mode === "signup" ? "#c2856b" : "transparent",
-                color: mode === "signup" ? "#1A1A1A" : "#8a8a7a",
-              }}
-            >
-              Sign Up
-            </button>
+              Calm
+            </h2>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-xs tracking-[0.15em] uppercase mb-2"
-                style={{ color: "#8a8a7a", fontFamily: "var(--font-sans), sans-serif" }}
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-                className="w-full border border-[#1A1A1A]/15 bg-white px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#c2856b] focus:outline-none transition-colors disabled:opacity-50"
-                style={{ fontFamily: "var(--font-sans), sans-serif" }}
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-xs tracking-[0.15em] uppercase mb-2"
-                style={{ color: "#8a8a7a", fontFamily: "var(--font-sans), sans-serif" }}
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                disabled={loading}
-                className="w-full border border-[#1A1A1A]/15 bg-white px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#c2856b] focus:outline-none transition-colors disabled:opacity-50"
-                style={{ fontFamily: "var(--font-sans), sans-serif" }}
-                placeholder="••••••"
-              />
-            </div>
-
-            {error && (
-              <p
-                className="text-xs"
-                style={{ color: "#c2856b", fontFamily: "var(--font-sans), sans-serif" }}
-              >
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 text-sm tracking-[0.1em] uppercase transition-colors disabled:opacity-50"
-              style={{
-                fontFamily: "var(--font-sans), sans-serif",
-                backgroundColor: "#c2856b",
-                color: "#FDFCF7",
-              }}
-            >
-              {loading
-                ? "Please wait..."
-                : isAnonymous
-                  ? "Link Account"
-                  : mode === "signin"
-                    ? "Sign In"
-                    : "Create Account"}
-            </button>
-          </form>
+          <p
+            style={{
+              fontSize: 12,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              color: "#8a8a7a",
+              margin: 0,
+            }}
+          >
+            {isAnonymous ? "Save Your Progress" : mode === "signin" ? "Sign In" : "Create Account"}
+          </p>
         </div>
+
+        {/* Providers */}
+        <div style={{ marginBottom: 32 }}>
+          <button
+            onClick={handleGitHub}
+            disabled={loading}
+            style={{
+              ...buttonBase,
+              marginBottom: 12,
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            <GithubIcon />
+            Continue with GitHub
+          </button>
+
+          <button
+            onClick={handleAnonymous}
+            disabled={loading}
+            style={{
+              ...buttonBase,
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            Continue as guest
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            marginBottom: 32,
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: "rgba(26, 26, 26, 0.15)" }} />
+          <span
+            style={{
+              fontSize: 12,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              color: "#8a8a7a",
+            }}
+          >
+            or with email
+          </span>
+          <div style={{ flex: 1, height: 1, background: "rgba(26, 26, 26, 0.15)" }} />
+        </div>
+
+        {/* Email form */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+          <button
+            type="button"
+            onClick={() => setMode("signin")}
+            style={{
+              flex: 1,
+              fontSize: 12,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              padding: "8px 0",
+              border: 0,
+              borderBottom: `2px solid ${mode === "signin" ? "#c2856b" : "transparent"}`,
+              background: "transparent",
+              color: mode === "signin" ? "#1A1A1A" : "#8a8a7a",
+              fontFamily: "var(--font-sans), sans-serif",
+              cursor: "pointer",
+            }}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("signup")}
+            style={{
+              flex: 1,
+              fontSize: 12,
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              padding: "8px 0",
+              border: 0,
+              borderBottom: `2px solid ${mode === "signup" ? "#c2856b" : "transparent"}`,
+              background: "transparent",
+              color: mode === "signup" ? "#1A1A1A" : "#8a8a7a",
+              fontFamily: "var(--font-sans), sans-serif",
+              cursor: "pointer",
+            }}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 20 }}>
+            <label
+              htmlFor="email"
+              style={{
+                display: "block",
+                fontSize: 12,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                marginBottom: 8,
+                color: "#8a8a7a",
+                fontFamily: "var(--font-sans), sans-serif",
+              }}
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="you@example.com"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label
+              htmlFor="password"
+              style={{
+                display: "block",
+                fontSize: 12,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                marginBottom: 8,
+                color: "#8a8a7a",
+                fontFamily: "var(--font-sans), sans-serif",
+              }}
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              disabled={loading}
+              placeholder="••••••"
+              style={inputStyle}
+            />
+          </div>
+
+          {error && (
+            <p
+              style={{
+                fontSize: 12,
+                color: "#c2856b",
+                fontFamily: "var(--font-sans), sans-serif",
+                margin: "0 0 16px 0",
+              }}
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "100%",
+              padding: "12px 0",
+              fontSize: 14,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              background: "#c2856b",
+              color: "#FDFCF7",
+              fontFamily: "var(--font-sans), sans-serif",
+              border: 0,
+              cursor: "pointer",
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            {loading
+              ? "Please wait..."
+              : isAnonymous
+                ? "Link Account"
+                : mode === "signin"
+                  ? "Sign In"
+                  : "Create Account"}
+          </button>
+        </form>
       </div>
     </div>
   );
