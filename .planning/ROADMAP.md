@@ -71,21 +71,29 @@ Plans:
 
 - [x] 03-03-PLAN.md — Sharing, Export & Public Links
 
-## Phase 4: Refinement & Growth
+## Phase 4: Social & Sharing
+
+*   **Objective:** Add social features — streaks, daily carbon tracking (git-like input), newspaper-exact export, and sharing across formats (JPEG/PNG, LinkedIn, links).
+*   **Key deliverables:**
+    *   Daily carbon tracker with streak tracking (similar to GitHub contribution graph).
+    *   Newspaper-exact layout for edition export (actual broadsheet layout, not editorial style).
+    *   Multi-format export: image (JPEG/PNG), LinkedIn text, shareable links.
+    *   Storage and accounts: brainstorm device-local vs. account-based persistence.
+*   **Goal:** Turn Calm into a daily habit with social accountability and shareable newspaper-quality reports.
+*   **Depends on:** Phase 3
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 4 to break down)
+
+## Phase 5: Refinement & Growth
 
 *   **Objective:** Broaden the platform's capabilities.
 *   **Key deliverables:**
     *   Expanding the AI Coach's question set.
     *   Supporting more types of data for the Ledger.
     *   Community or comparative features.
-
-### Phase 04.1: this phase is for the social part, focusing on setting streaks, see carbon footprint analysis and share it. the webapp is supposed to let user track their daily carbon footprint. Might be done by implementing git-like daily input. I dont know how to tackle the storage concern, do we neccesarily need accounts to store items. Anyways, things to add. A newspaper-eqsue format for export of the analysis, etc. I am talkin about actual newspaper, not editorial style. Export the said newspaper analysis in different format - Image(jpeg, png), links, linkedin etc. Daily tracker (similar to git) Need to brainstorm what the user tracks daily. Need to brainstorm neccessity of accounts (INSERTED)
-
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
-**Depends on:** Phase 4
-**Plans:** 0 plans
-
-Plans:
-
-- [ ] TBD (run /gsd-plan-phase 04.1 to break down)
+*   **Goal:** Polish and extend existing features based on user feedback.
+*   **Depends on:** Phase 4

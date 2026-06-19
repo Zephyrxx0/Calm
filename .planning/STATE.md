@@ -18,12 +18,13 @@ progress:
 This file tracks the current state of the project.
 
 **Current Phase:** 3 (Complete)
-**Next Step:** Phase 4.1 — Social & Sharing (URGENT INSERTION)
-**Last Activity:** Phase 3 execution complete (all 4 plans, 3 waves). Phase 4.1 inserted after Phase 4.
+**Next Step:** Phase 4 — Social & Sharing
+**Last Activity:** Phase 3 execution complete. Phases renumbered: 4.1 → 4 (Social), 4 → 5 (Refinement).
 **Context Gathered:** 2026-06-19
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- Phase 4.1 inserted: Social phase — streaks, newspaper export, daily tracker (URGENT)
+- Phase 4.1 inserted: Social & Sharing (URGENT)
+- Phase 4.1 renumbered to Phase 4; old Phase 4 renumbered to Phase 5
