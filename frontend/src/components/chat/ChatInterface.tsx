@@ -169,6 +169,16 @@ export default function ChatInterface({
               for (const part of content.parts) {
                 if (part.thought) {
                   thoughtText += part.text || "";
+                } else if (part.functionResponse) {
+                  // Native function response from Gemini tool call
+                  const fr = part.functionResponse;
+                  if (fr.name === "end_chat" && fr.response) {
+                    setEndChatData({
+                      total_tonnes: fr.response.total_tonnes,
+                      breakdown: fr.response.breakdown,
+                      mode: fr.response.mode || "quick",
+                    });
+                  }
                 } else if (part.text) {
                   const t = part.text.trim();
                   if (t.startsWith("{") && /"(name|commute|travel|home|diet|shopping)"/.test(t)) {
@@ -182,7 +192,6 @@ export default function ChatInterface({
                     } catch {
                       /* ignore parse error */
                     }
-                    // Show text before marker, hide marker + JSON
                     visibleText += t.slice(0, t.indexOf("[CALM_END_CHAT]"));
                     continue;
                   }

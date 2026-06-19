@@ -62,5 +62,5 @@ CATEGORY_ADVICE = {
 
 @dataclass
 class AgentConfig:
-    model: str = "gemini-2.5-flash-lite"
+    model: str = "gemini-2.5-flash"
     default_mode: str = "quick"
