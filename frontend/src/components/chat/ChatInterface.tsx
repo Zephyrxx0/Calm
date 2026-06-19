@@ -276,7 +276,7 @@ export default function ChatInterface({
               className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] px-5 py-3.5 text-sm leading-relaxed ${
+                className={`max-w-[80%] px-5 py-3.5 text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === "user"
                     ? "rounded-2xl rounded-tr-sm bg-accent text-white"
                     : "rounded-2xl rounded-tl-sm bg-surface shadow-sm ring-1 ring-border text-foreground/90"

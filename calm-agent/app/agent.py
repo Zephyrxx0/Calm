@@ -300,6 +300,30 @@ async def intercept_tool_calls(
         else:
             new_parts.append(part)
 
+    # Auto-append [CALM_END_CHAT] when summarizing phase completes,
+    # so the frontend shows the Edition dialog. This avoids depending
+    # on the model to call end_chat (Gemma has no native function calling).
+    state = callback_context.state
+    if state.get("phase") == "summarizing":
+        import json as _json
+
+        extracted = state.get("extracted_data", {})
+        carbon_result = calculate_carbon(
+            commute=extracted.get("commute"),
+            travel=extracted.get("travel"),
+            home=extracted.get("home"),
+            diet_data=extracted.get("diet"),
+            shopping=extracted.get("shopping"),
+        )
+        end_chat_payload = _json.dumps({
+            "total_tonnes": carbon_result["total_tonnes"],
+            "breakdown": carbon_result["breakdown"],
+            "mode": state.get("mode", "quick"),
+        })
+        new_parts.append(
+            genai_types.Part(text=f"\n\n[CALM_END_CHAT]{end_chat_payload}")
+        )
+
     llm_response.content.parts = new_parts
     return llm_response
 
