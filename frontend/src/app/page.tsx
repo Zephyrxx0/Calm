@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import { useInView } from "@/hooks/use-in-view";
 import { DoodleLeaf, DoodleBranch, DoodleSun, DoodlePebbles } from "@/components/OrganicDoodles";
 import { useAuth } from "@/contexts/AuthContext";
-import { SignInModal } from "@/components/auth/SignInModal";
+
+const SignInModal = dynamic(() => import("@/components/auth/SignInModal"), { ssr: false });
 
 /* ─── Grain Overlay ─── */
 
@@ -421,13 +423,9 @@ export default function Home() {
       <Grain />
       <Nav />
       <Hero onSignIn={() => setShowAuth(true)} />
-      {!showAuth && (
-        <>
-          <Manifesto />
-          <Process />
-          <Footer />
-        </>
-      )}
+      <Manifesto />
+      <Process />
+      <Footer />
       <SignInModal open={showAuth} onOpenChange={setShowAuth} />
     </>
   );

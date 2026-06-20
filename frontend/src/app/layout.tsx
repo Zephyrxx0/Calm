@@ -3,6 +3,7 @@ import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { Agentation } from "agentation";
 
 const instrumentSerif = Instrument_Serif({
   weight: "400",
@@ -43,6 +44,7 @@ export default function RootLayout({
         <AuthProvider>
           <AuthGuard>{children}</AuthGuard>
         </AuthProvider>
+        {process.env.NODE_ENV === "development" && <Agentation />}
       </body>
     </html>
   );

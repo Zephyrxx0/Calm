@@ -17,6 +17,17 @@
         "CONTEXT7_API_KEY": "ctx7sk-a95e78ca-9483-47ba-a54a-d1a01fe20637"
       },
       "enabled": true
+    },
+    "agentation": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "agentation-mcp",
+        "server"
+      ],
+      "enabled": true,
+      "environment": {}
     }
   }
 }

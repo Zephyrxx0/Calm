@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SignInModal } from "./SignInModal";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Save } from "lucide-react";
+
+const SignInModal = dynamic(() => import("./SignInModal"), { ssr: false });
 
 export function AuthButton() {
   const { user, loading, logOut, isAnonymous } = useAuth();
@@ -53,6 +55,7 @@ export function AuthButton() {
           {isAnonymous && (
             <>
               <DropdownMenuItem onClick={() => setModalOpen(true)}>
+                <Save className="mr-2 h-4 w-4" />
                 Save your progress
               </DropdownMenuItem>
               <DropdownMenuSeparator />

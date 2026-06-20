@@ -361,8 +361,7 @@ export default function ChatInterface({
       )}
 
       {/* Input */}
-      <div className="border-t border-border bg-background py-4">
-        <form onSubmit={handleSubmit} className="flex gap-3">
+      <form onSubmit={handleSubmit} className="flex items-center gap-3 py-4 px-1">
           <input
             ref={inputRef}
             type="text"
@@ -380,7 +379,6 @@ export default function ChatInterface({
             Send
           </button>
         </form>
-      </div>
     </div>
   );
 }

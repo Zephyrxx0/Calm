@@ -1,7 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Separate component that ONLY renders client-side via dynamic import
+function ModalPortal({ children }: { children: React.ReactNode }) {
+  return createPortal(children, document.body);
+}
+
+interface SignInModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
 
 function GithubIcon() {
   return (
@@ -16,12 +27,7 @@ function GithubIcon() {
   );
 }
 
-interface SignInModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function SignInModal({ open, onOpenChange }: SignInModalProps) {
+export default function SignInModal({ open, onOpenChange }: SignInModalProps) {
   const { signIn, signUp, signInAnonymous, signInGitHub, isAnonymous, upgradeAnonymous } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -33,7 +39,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       if (isAnonymous && mode === "signup") {
         await upgradeAnonymous(email, password);
@@ -119,18 +124,17 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
     boxSizing: "border-box" as const,
   };
 
-  return (
+  const content = (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 50,
+        zIndex: 9999,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
       }}
     >
-      {/* Backdrop */}
       <div
         style={{
           position: "absolute",
@@ -141,8 +145,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
         }}
         onClick={() => onOpenChange(false)}
       />
-
-      {/* Auth panel */}
       <div
         style={{
           position: "relative",
@@ -156,7 +158,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
           border: "1px solid rgba(26, 26, 26, 0.1)",
         }}
       >
-        {/* Masthead */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div
             style={{
@@ -193,7 +194,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
           </p>
         </div>
 
-        {/* Providers */}
         <div style={{ marginBottom: 32 }}>
           <button
             onClick={handleGitHub}
@@ -207,7 +207,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
             <GithubIcon />
             Continue with GitHub
           </button>
-
           <button
             onClick={handleAnonymous}
             disabled={loading}
@@ -220,14 +219,8 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
           </button>
         </div>
 
-        {/* Divider */}
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-            marginBottom: 32,
-          }}
+          style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}
         >
           <div style={{ flex: 1, height: 1, background: "rgba(26, 26, 26, 0.15)" }} />
           <span
@@ -243,7 +236,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
           <div style={{ flex: 1, height: 1, background: "rgba(26, 26, 26, 0.15)" }} />
         </div>
 
-        {/* Email form */}
         <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
           <button
             type="button"
@@ -383,4 +375,6 @@ export function SignInModal({ open, onOpenChange }: SignInModalProps) {
       </div>
     </div>
   );
+
+  return <ModalPortal>{content}</ModalPortal>;
 }
