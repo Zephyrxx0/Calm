@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_session
-from app.models.session import Message, Session as InterviewSession
+from app.models.session import Session as InterviewSession
 from app.services.ai_coach import session_states
 from app.services.carbon_model import CarbonModel
 from app.services.benchmarks import BenchmarkService
@@ -22,19 +22,7 @@ async def get_edition(
     country: str = Query(default="Global", description="Country for benchmark comparison"),
     db: AsyncSession = Depends(get_session),
 ):
-    """Retrieve session data, compute footprint, and return Edition payload.
-
-    Returns:
-        {
-            "session_id": "...",
-            "footprint": {"total_co2e": float, "breakdown": {...}},
-            "messages": [{"role": "user"|"ai", "content": "..."}],
-            "quotes": ["pull quote 1", "pull quote 2"],
-            "benchmarks": {"global": float, "national": float, "label": str},
-            "insights": {"summary": str, "recommendations": [str]}
-        }
-    """
-    # Validate session exists
+    """Retrieve session data, compute footprint, and return Edition payload."""
     uid = uuid.UUID(session_id)
     result = await db.execute(
         select(InterviewSession)
@@ -45,22 +33,27 @@ async def get_edition(
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Get extracted data from interview state
-    state = session_states.get(session_id)
-    extracted_data = state.extracted_data if state else {}
-
-    # Compute footprint
-    model = CarbonModel()
-    footprint_result = model.calculate(extracted_data)
+    # Get footprint data — prefer persisted, fall back to in-memory state
+    footprint_data = session.footprint_data
+    if footprint_data:
+        total_co2e = footprint_data["total_co2e"]
+        breakdown = footprint_data["breakdown"]
+        extracted_data = footprint_data.get("extracted_data", {})
+    else:
+        # Fallback for older sessions without persisted data
+        state = session_states.get(session_id)
+        extracted_data = state.extracted_data if state else {}
+        model = CarbonModel()
+        footprint_result = model.calculate(extracted_data)
+        total_co2e = footprint_result.total_co2e
+        breakdown = footprint_result.breakdown
 
     # Get benchmarks
     benchmarks = BenchmarkService().get_benchmarks(country)
 
     # Get AI insights
     insights_svc = InsightsService()
-    insights = await insights_svc.get_insights(
-        footprint_result.breakdown, footprint_result.total_co2e
-    )
+    insights = await insights_svc.get_insights(breakdown, total_co2e)
 
     # Build messages list
     messages = [
@@ -68,14 +61,14 @@ async def get_edition(
         for msg in sorted(session.messages, key=lambda m: m.id)
     ]
 
-    # Extract 1-2 pull quotes from user messages
+    # Extract pull quotes
     quotes = _extract_quotes(messages)
 
     return {
         "session_id": session_id,
         "footprint": {
-            "total_co2e": footprint_result.total_co2e,
-            "breakdown": footprint_result.breakdown,
+            "total_co2e": total_co2e,
+            "breakdown": breakdown,
         },
         "messages": messages,
         "quotes": quotes,

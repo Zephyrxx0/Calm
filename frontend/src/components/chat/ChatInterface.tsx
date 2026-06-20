@@ -18,7 +18,7 @@ interface EndChatData {
 
 interface ChatInterfaceProps {
   sessionId: string;
-  userId: string;
+  userId?: string;
   initialMessage?: string | null;
 }
 
@@ -35,22 +35,6 @@ export default function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-
-  // Persist edition data when interview ends
-  useEffect(() => {
-    if (endChatData && messages.length > 0) {
-      sessionStorage.setItem(
-        `edition_${sessionId}`,
-        JSON.stringify({
-          footprint: {
-            total_co2e: endChatData.total_tonnes * 1000,
-            breakdown: endChatData.breakdown,
-          },
-          messages: messages.map((m) => ({ role: m.role, content: m.text })),
-        })
-      );
-    }
-  }, [endChatData]);
 
   // Typing animation refs
   const pendingBufferRef = useRef("");
@@ -142,7 +126,7 @@ export default function ChatInterface({
         headers: {
           "Content-Type": "application/json",
           "x-session-id": sessionId,
-          "x-user-id": userId,
+          "x-user-id": userId || sessionStorage.getItem("userId") || "",
         },
         body: JSON.stringify({
           messages: [{ role: "user", parts: [{ type: "text", text }] }],
@@ -186,7 +170,6 @@ export default function ChatInterface({
                 if (part.thought) {
                   thoughtText += part.text || "";
                 } else if (part.functionResponse) {
-                  // Native function response from Gemini tool call
                   const fr = part.functionResponse;
                   if (fr.name === "end_chat" && fr.response) {
                     setEndChatData({
@@ -219,7 +202,6 @@ export default function ChatInterface({
                 const isFinal = !!event.finishReason;
 
                 if (isFinal) {
-                  // Final event replaces everything — set text directly
                   pendingBufferRef.current = "";
                   setMessages((prev) =>
                     prev.map((m) => {
@@ -232,8 +214,6 @@ export default function ChatInterface({
                     })
                   );
                 } else {
-                  // Partial event — buffer visible text for smooth animation;
-                  // thought text updates immediately
                   if (thoughtText) {
                     setMessages((prev) =>
                       prev.map((m) => {
@@ -387,23 +367,23 @@ export default function ChatInterface({
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="flex items-center gap-3 py-4 px-1">
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Reflect and reply..."
-            disabled={streaming}
-            className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent disabled:opacity-50 transition-shadow"
-          />
-          <button
-            type="submit"
-            disabled={streaming || !input.trim()}
-            className="rounded-xl bg-accent px-6 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
-          >
-            Send
-          </button>
-        </form>
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Reflect and reply..."
+          disabled={streaming}
+          className="flex-1 rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground placeholder:text-muted-light focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent disabled:opacity-50 transition-shadow"
+        />
+        <button
+          type="submit"
+          disabled={streaming || !input.trim()}
+          className="rounded-xl bg-accent px-6 py-3 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors active:scale-[0.97]"
+        >
+          Send
+        </button>
+      </form>
     </div>
   );
 }

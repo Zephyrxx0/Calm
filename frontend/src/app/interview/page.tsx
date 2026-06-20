@@ -21,17 +21,8 @@ export default function InterviewPage() {
   useEffect(() => {
     async function startSession() {
       try {
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (user) {
-          const token = await user.getIdToken();
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-
         const response = await fetch("/api/interview/start", {
           method: "POST",
-          headers,
         });
 
         if (!response.ok) {
@@ -50,7 +41,6 @@ export default function InterviewPage() {
             "Content-Type": "application/json",
             "x-session-id": data.session_id,
             "x-user-id": data.user_id,
-            ...(user ? { Authorization: `Bearer ${await user.getIdToken()}` } : {}),
           },
           body: JSON.stringify({
             messages: [{ role: "user", parts: [{ type: "text", text: "hi" }] }],
@@ -96,7 +86,7 @@ export default function InterviewPage() {
     }
 
     startSession();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -125,11 +115,9 @@ export default function InterviewPage() {
   return (
     <main className="flex flex-1 flex-col min-h-screen bg-background relative overflow-hidden">
       <Grain />
-      {/* Decorative Doodles */}
       <DoodleLeaf className="absolute -top-10 -left-10 w-64 h-64 text-accent/5 rotate-[15deg] pointer-events-none" />
       <DoodleSun className="absolute bottom-10 -right-20 w-80 h-80 text-accent/5 pointer-events-none" />
 
-      {/* Header */}
       <header className="border-b border-border/50 px-6 py-5 relative z-10 bg-background/50 backdrop-blur-md">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <a
@@ -155,7 +143,6 @@ export default function InterviewPage() {
         </div>
       </header>
 
-      {/* Chat Interface */}
       <div className="flex-1 flex flex-col relative z-10 h-[calc(100vh-69px)]">
         <ChatInterface
           sessionId={sessionId}

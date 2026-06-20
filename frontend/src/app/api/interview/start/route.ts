@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 
 const AGENT_URL = process.env.AGENT_URL || "http://localhost:8000";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    const authHeader = request.headers.get("authorization");
     const userId = `user-${nanoid(12)}`;
 
     const sessionRes = await fetch(
