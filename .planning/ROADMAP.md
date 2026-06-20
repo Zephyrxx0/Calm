@@ -93,11 +93,11 @@ Plans:
 **Goal:** Transform the broadsheet edition into a realistic 2000-era vintage newspaper front page with 7-layer print simulation (paper grain, halftone, ink bleed, fold crease, edge wear, vignette, cream-to-ivory gradient) — all as inline SVG/CSS filters captured natively by html-to-image at 17×11 landscape. Single NewspaperLayout component serves three routes: edition, daily, and share.
 **Requirements**: [D-45, D-46, D-47, D-48, D-49, D-50, D-51, D-52, D-53, D-54, D-55, D-56, D-57]
 **Depends on:** Phase 4
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 Plans:
 **Wave 1**
 
-- [ ] 04.1-01-PLAN.md — Font Setup & Masthead: Playfair Display + PT Serif via next/font/google, masthead "The Daily Calm"
+- [x] 04.1-01-PLAN.md — Font Setup & Masthead: Playfair Display + PT Serif via next/font/google, masthead "The Daily Calm"
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
