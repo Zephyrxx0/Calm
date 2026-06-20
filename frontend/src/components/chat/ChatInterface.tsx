@@ -287,6 +287,18 @@ export default function ChatInterface({
   return (
     <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4">
       {/* Messages */}
+      {endChatData && dialogDismissed && (
+        <div className="sticky top-0 z-20 -mx-4 px-4 py-2.5 bg-background/90 backdrop-blur-sm border-b border-accent/15 flex items-center justify-between">
+          <span className="text-sm text-accent font-sans">Your Edition is ready</span>
+          <button
+            onClick={() => setDialogDismissed(false)}
+            className="text-sm font-medium text-accent hover:underline underline-offset-2 transition-colors"
+          >
+            View Results →
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto py-8 space-y-4">
         {initialMessage && (
           <div className="flex justify-start">
@@ -395,21 +407,6 @@ export default function ChatInterface({
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Reopen dialog banner — shown after user dismisses the edition dialog */}
-      {endChatData && dialogDismissed && (
-        <div className="px-1 py-2">
-          <button
-            onClick={() => setDialogDismissed(false)}
-            className="w-full rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent hover:bg-accent/10 transition-colors flex items-center justify-center gap-2"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 7L6 11L12 3" />
-            </svg>
-            Your edition is ready — view results
-          </button>
         </div>
       )}
 
