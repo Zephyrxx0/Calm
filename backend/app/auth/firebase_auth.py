@@ -1,51 +1,55 @@
-"""Firebase Admin SDK integration for token verification."""
+"""Firebase Admin SDK token verification."""
 import os
 
+import firebase_admin
+from firebase_admin import auth, credentials
 from fastapi import HTTPException
-from firebase_admin import auth as firebase_auth
-from firebase_admin import credentials, initialize_app
-from firebase_admin.exceptions import FirebaseError
 
-# Initialize Firebase Admin SDK once at import time.
-# In production, FIREBASE_CREDENTIALS_PATH points to a service account JSON file.
-# In development, falls back to default credentials (e.g., ADC or emulator).
-_firebase_initialized = False
+_app_initialized = False
 
 
-def _initialize_firebase_admin() -> None:
-    """Initialize Firebase Admin app with credentials from environment."""
-    global _firebase_initialized
-    if _firebase_initialized:
+def _ensure_initialized():
+    global _app_initialized
+    if _app_initialized:
         return
-
-    cred_path = os.environ.get("FIREBASE_CREDENTIALS_PATH")
-    if cred_path and os.path.isfile(cred_path):
-        cred = credentials.Certificate(cred_path)
+    creds_path = os.environ.get("FIREBASE_CREDENTIALS_PATH")
+    if creds_path and os.path.exists(creds_path):
+        cred = credentials.Certificate(creds_path)
+        firebase_admin.initialize_app(cred)
     else:
-        # Use application default credentials (GCP, emulator, or local dev)
-        cred = credentials.ApplicationDefault()
-
-    initialize_app(cred)
-    _firebase_initialized = True
-
-
-_initialize_firebase_admin()
+        # Falls back to GOOGLE_APPLICATION_CREDENTIALS or GCP default creds
+        firebase_admin.initialize_app()
+    _app_initialized = True
 
 
 async def verify_firebase_token(token: str) -> str:
     """Verify a Firebase ID token and return the user's UID.
 
-    Args:
-        token: Firebase ID token from the client SDK.
-
-    Returns:
-        The decoded token's uid string.
+    Uses firebase_admin.auth.verify_id_token which handles:
+    - Signature verification against Google's public keys
+    - Token expiration and issued-at checks
+    - Audience and issuer validation
+    - Revocation checks
 
     Raises:
-        HTTPException(401) if the token is invalid, expired, or malformed.
+        HTTPException(401) if the token is invalid.
     """
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    _ensure_initialized()
+
     try:
-        decoded_token = firebase_auth.verify_id_token(token)
-        return decoded_token["uid"]
-    except (FirebaseError, ValueError) as exc:
-        raise HTTPException(status_code=401, detail="Invalid token") from exc
+        decoded = auth.verify_id_token(token)
+        uid = decoded.get("uid", "")
+        if not uid:
+            raise HTTPException(status_code=401, detail="Invalid token: missing uid")
+        return uid
+    except auth.RevokedIdTokenError:
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+    except auth.ExpiredIdTokenError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except auth.InvalidIdTokenError as exc:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail="Token verification failed")

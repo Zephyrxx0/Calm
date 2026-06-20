@@ -45,7 +45,7 @@ const INITIAL_FORM: DailyFormData = {
   carbon_consciousness: "",
 };
 
-export function DailyForm() {
+export function DailyForm({ onEntryCreated }: { onEntryCreated?: () => void }) {
   const { user } = useAuth();
   const [form, setForm] = useState<DailyFormData>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
@@ -104,6 +104,7 @@ export function DailyForm() {
 
       setSuccess(true);
       setForm(INITIAL_FORM);
+      onEntryCreated?.();
 
       // Reset success indicator after animation
       setTimeout(() => setSuccess(false), 3000);

@@ -45,7 +45,7 @@ class ContributionData(BaseModel):
     """Single day in the contribution graph (GitHub-style heatmap)."""
 
     date: date
-    intensity: int  # 0-4 scale
+    carbon_consciousness: int  # 1-5 scale
 
 
 class StreakResponse(BaseModel):
@@ -54,7 +54,7 @@ class StreakResponse(BaseModel):
     current_streak: int
     longest_streak: int
     total_days: int
-    contributions: List[ContributionData]
+    entries: List[ContributionData]
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +125,28 @@ async def create_daily_entry(
     db: AsyncSession = Depends(get_session),
 ):
     """Create a daily carbon tracking entry (one per user per day)."""
+    # Auto-create user if this is their first entry
+    user_result = await db.execute(select(User).where(User.firebase_uid == firebase_uid))
+    user = user_result.scalar_one_or_none()
+    if user is None:
+        db.add(User(firebase_uid=firebase_uid))
+        await db.flush()
+
     today = date.today()
+
+    # Check for existing entry (avoid IntegrityError ambiguity with FK)
+    existing = await db.execute(
+        select(DailyEntry).where(
+            DailyEntry.firebase_uid == firebase_uid,
+            DailyEntry.date == today,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=409,
+            detail="Daily entry already exists for today",
+        )
+
     consciousness = _calculate_consciousness(entry_data)
 
     daily_entry = DailyEntry(
@@ -138,15 +159,8 @@ async def create_daily_entry(
     )
 
     db.add(daily_entry)
-    try:
-        await db.commit()
-        await db.refresh(daily_entry)
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="Daily entry already exists for today",
-        )
+    await db.commit()
+    await db.refresh(daily_entry)
 
     return _entry_response(daily_entry)
 
@@ -192,14 +206,14 @@ async def get_streak_data(
     for i in range(365):
         d = today - timedelta(days=365 - 1 - i)
         entry = entry_dates.get(d)
-        intensity = min(entry.carbon_consciousness, 4) if entry else 0
-        contributions.append(ContributionData(date=d, intensity=intensity))
+        consciousness = min(entry.carbon_consciousness, 4) if entry else 0
+        contributions.append(ContributionData(date=d, carbon_consciousness=consciousness))
 
     return StreakResponse(
         current_streak=current_streak,
         longest_streak=longest_streak,
-        total_days=len(all_dates),
-        contributions=contributions,
+        total_days=len(entries),
+        entries=contributions,
     )
 
 

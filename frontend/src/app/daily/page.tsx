@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthButton } from "@/components/auth/AuthButton";
 import { DailyForm } from "@/components/daily/DailyForm";
@@ -17,6 +17,11 @@ function Grain() {
 export default function DailyPage() {
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [graphKey, setGraphKey] = useState(0);
+
+  const handleEntryCreated = useCallback(() => {
+    setGraphKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -99,7 +104,7 @@ export default function DailyPage() {
                 <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
                   Track Today
                 </h2>
-                <DailyForm />
+                <DailyForm onEntryCreated={handleEntryCreated} />
               </div>
             </section>
 
@@ -109,7 +114,7 @@ export default function DailyPage() {
                 <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
                   Your Carbon Story
                 </h2>
-                <ContributionGraph />
+                <ContributionGraph key={graphKey} />
               </div>
             </section>
           </div>
