@@ -2,7 +2,7 @@
 sketch: 003
 name: column-flow
 question: "How do Playfair Display headlines + PT Serif body read at newspaper sizes in 4 vs. 5 vs. 6 columns?"
-winner: null
+winner: "B"
 tags: [typography, columns, justification, hyphenation, readability]
 ---
 

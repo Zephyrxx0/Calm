@@ -14,4 +14,4 @@ Realistic vintage newspaper front page for Calm's carbon summary. 2000-era broad
 |---|------|----------------|--------|------|
 | 001 | newspaper-layout | Does a 4-column broadsheet with vintage masthead feel like a real newspaper? | A | layout, masthead, newspaper, columns |
 | 002 | svg-filters | Which vintage filter layers are visually essential vs. distracting? | A | filters, svg, paper-texture, halftone |
-| 003 | column-flow | How do Playfair Display + PT Serif body read at newspaper sizes in 4 vs. 5 vs. 6 columns? | — | typography, columns, justification, readability |
+| 003 | column-flow | How do Playfair Display + PT Serif body read at newspaper sizes in 4 vs. 5 vs. 6 columns? | B | typography, columns, justification, readability |
