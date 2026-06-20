@@ -147,3 +147,83 @@ async def chat_message(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+class FinalizeInput(BaseModel):
+    """Request body for POST /finalize — persists interview results to DB."""
+    total_tonnes: float
+    breakdown: dict
+    mode: str = "quick"
+    messages: list[dict] = []
+
+
+@router.post("/interview/{session_id}/finalize")
+async def finalize_interview(
+    session_id: str,
+    data: FinalizeInput,
+    db: AsyncSession = Depends(get_session),
+    authorization: Optional[str] = Header(None),
+):
+    """Persist interview session + messages + footprint to PostgreSQL.
+
+    Called by the frontend when the calm-agent emits end_chat data.
+    Enables /edition/{session_id} to look up the session in the DB.
+    """
+    try:
+        uid = uuid.UUID(session_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid session_id")
+
+    # Extract firebase_uid if auth present
+    firebase_uid = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[len("Bearer "):]
+        try:
+            firebase_uid = await verify_firebase_token(token)
+        except HTTPException:
+            pass
+
+    # Check if session already exists (idempotent)
+    existing = await db.execute(
+        select(InterviewSession).where(InterviewSession.id == uid)
+    )
+    session = existing.scalar_one_or_none()
+
+    if session is None:
+        # Auto-create user if authenticated
+        if firebase_uid:
+            user_result = await db.execute(
+                select(User).where(User.firebase_uid == firebase_uid)
+            )
+            if user_result.scalar_one_or_none() is None:
+                db.add(User(firebase_uid=firebase_uid))
+                await db.flush()
+
+        session = InterviewSession(
+            id=uid,
+            firebase_uid=firebase_uid,
+            footprint_data={
+                "total_co2e": data.total_tonnes * 1000,
+                "breakdown": data.breakdown,
+                "mode": data.mode,
+            },
+        )
+        db.add(session)
+        await db.flush()
+
+        for msg in data.messages:
+            db.add(Message(
+                session_id=uid,
+                role=msg.get("role", "user"),
+                content=msg.get("content", ""),
+            ))
+    else:
+        # Update existing session with footprint data
+        session.footprint_data = {
+            "total_co2e": data.total_tonnes * 1000,
+            "breakdown": data.breakdown,
+            "mode": data.mode,
+        }
+
+    await db.commit()
+    return {"status": "ok", "session_id": session_id}

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   id: string;
@@ -28,6 +29,7 @@ export default function ChatInterface({
   initialMessage,
 }: ChatInterfaceProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -36,21 +38,35 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Persist edition data when interview ends
+  // Persist interview results to PostgreSQL when chat ends
   useEffect(() => {
-    if (endChatData && messages.length > 0) {
-      sessionStorage.setItem(
-        `edition_${sessionId}`,
-        JSON.stringify({
-          footprint: {
-            total_co2e: endChatData.total_tonnes * 1000,
+    if (!endChatData || messages.length === 0) return;
+
+    (async () => {
+      try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (user) {
+          const token = await user.getIdToken();
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        await fetch(`/api/interview/finalize/${sessionId}`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            total_tonnes: endChatData.total_tonnes,
             breakdown: endChatData.breakdown,
-          },
-          messages: messages.map((m) => ({ role: m.role, content: m.text })),
-        })
-      );
-    }
-  }, [endChatData, sessionId, messages]);
+            mode: endChatData.mode,
+            messages: messages.map((m) => ({ role: m.role, content: m.text })),
+          }),
+        });
+      } catch (err) {
+        console.error("Finalize failed:", err);
+      }
+    })();
+  }, [endChatData, sessionId, messages, user]);
 
   // Typing animation refs
   const pendingBufferRef = useRef("");
