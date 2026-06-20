@@ -94,12 +94,18 @@ Plans:
 **Requirements**: [D-45, D-46, D-47, D-48, D-49, D-50, D-51, D-52, D-53, D-54, D-55, D-56, D-57]
 **Depends on:** Phase 4
 **Plans:** 4 plans
-
 Plans:
+**Wave 1**
 
 - [ ] 04.1-01-PLAN.md — Font Setup & Masthead: Playfair Display + PT Serif via next/font/google, masthead "The Daily Calm"
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 04.1-02-PLAN.md — SVG Filters & Visual Effects: 7-layer vintage print stack, 5-column layout, paper grain, ink bleed, fold crease, edge wear, vignette
 - [ ] 04.1-03-PLAN.md — Daily & Share Integration: Newspaper view toggle on daily page, newspaper rendering on share page
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 04.1-04-PLAN.md — Tests: NewspaperLayout component tests, update BroadsheetExport/DailyForm/SharePage tests
 
 ## Phase 5: Refinement & Growth
