@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 003: Typography &amp; Column Flow</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e0ddd5;
+    font-family: var(--font-body);
+    padding-top: 48px;
+    padding-bottom: 80px;
+  }
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: #2C2C2A; border-bottom: 1px solid #1A1A1A;
+    padding: 8px 16px; display: flex; gap: 8px; font-family: system-ui;
+  }
+  #variant-nav button {
+    padding: 6px 14px; border: 1px solid #555; border-radius: 4px;
+    background: #3a3a38; color: #ccc; cursor: pointer; font-size: 12px;
+    transition: all 0.15s ease;
+  }
+  #variant-nav button.active {
+    background: #C2856B; color: #fff; border-color: #C2856B;
+  }
+  #variant-nav button:hover:not(.active) {
+    background: #4a4a48; color: #fff;
+  }
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  #sketch-tools {
+    position: fixed; bottom: 12px; right: 12px; z-index: 9999;
+    font-family: system-ui; font-size: 12px;
+    background: rgba(0,0,0,0.75); color: white;
+    padding: 8px 12px; border-radius: 8px;
+    opacity: 0.35; transition: opacity 0.2s;
+    display: flex; gap: 10px; align-items: center;
+  }
+  #sketch-tools:hover { opacity: 1; }
+  #sketch-tools button {
+    background: #555; color: #fff; border: none; border-radius: 3px;
+    padding: 3px 8px; cursor: pointer; font-size: 11px;
+  }
+  #sketch-tools button:hover { background: #777; }
+
+  /* Shared page shell */
+  .page {
+    width: 100%; max-width: 1280px; margin: 0 auto;
+    background: #FAFAF8; color: #2C2C2A;
+    padding: 0.5in 0.5in;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    position: relative;
+  }
+  .page .masthead {
+    column-span: all; text-align: center; margin-bottom: 0.3in;
+    padding: 0.12in 0;
+    border-bottom: 2px solid #2C2C2A;
+    border-top: 2px solid #2C2C2A;
+  }
+  .page .masthead h1 {
+    font-family: var(--font-headline); font-size: 38px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: #1A1A1A; margin: 0.06in 0;
+  }
+  .page .masthead .meta {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: #6B6B68;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .page .headline {
+    column-span: all; margin-bottom: 0.2in;
+    border-bottom: 1px solid #D4D4CD; padding-bottom: 0.1in;
+  }
+  .page .headline h2 {
+    font-family: var(--font-headline); font-size: 28px; font-weight: 700;
+    line-height: 1.15; color: #1A1A1A; text-align: center;
+  }
+  .page .story-section {
+    break-inside: avoid; margin-bottom: 0.2in;
+  }
+  .page .story-section h3 {
+    font-family: var(--font-headline); font-size: 13px; font-weight: 700;
+    color: #1A1A1A; margin-bottom: 0.05in; text-align: left;
+  }
+  .page .story-section p {
+    font-size: 9.5px; line-height: 1.5; color: #2C2C2A;
+    margin-bottom: 0.06in;
+  }
+  .page .byline {
+    font-size: 9px; font-style: italic; color: #6B6B68;
+    margin-bottom: 0.04in; text-align: left;
+  }
+  .page .jump-line {
+    font-size: 8px; font-variant: small-caps; color: #6B6B68;
+    text-align: right; margin-top: 0.03in;
+  }
+  .page .footer {
+    column-span: all; text-align: center; margin-top: 0.15in;
+    padding-top: 0.08in; border-top: 1px solid #D4D4CD;
+    font-size: 9px; color: #9A9A97;
+  }
+  .page .stat-box {
+    column-span: all; text-align: center;
+    border-top: 1px solid #D4D4CD; border-bottom: 1px solid #D4D4CD;
+    padding: 0.15in 0; margin: 0.2in 0;
+  }
+  .page .stat-box .number {
+    font-family: var(--font-headline); font-size: 72px; font-weight: 700;
+    color: #1A1A1A; line-height: 1; display: block;
+  }
+  .page .stat-box .unit {
+    font-family: var(--font-headline); font-size: 13px;
+    color: #6B6B68; letter-spacing: 0.06em;
+    margin-top: 4px; display: block;
+  }
+
+  /* Column variants */
+  .grid-4 {
+    column-count: 4; column-gap: 0.45in;
+    column-rule: 1px solid #D4D4CD;
+    text-align: justify;
+  }
+  .grid-5 {
+    column-count: 5; column-gap: 0.3in;
+    column-rule: 0.5px solid #D4D4CD;
+    text-align: justify;
+  }
+  .grid-6 {
+    column-count: 6; column-gap: 0.2in;
+    column-rule: 0.5px solid #E5E5E2;
+    text-align: justify;
+  }
+
+  /* Justification helper */
+  .justify { text-align: justify; hyphens: auto; }
+  .grid-6 .story-section p { font-size: 8.5px; line-height: 1.4; }
+  .grid-6 .story-section h3 { font-size: 11px; }
+  .grid-6 .byline { font-size: 8px; }
+
+  /* Column annotation */
+  .col-annotation {
+    position: absolute; top: 0.5in; right: -30px;
+    font-family: system-ui; font-size: 10px; color: #C2856B;
+    writing-mode: vertical-lr; letter-spacing: 0.1em;
+    opacity: 0.6;
+  }
+
+  @media (max-width: 768px) {
+    .grid-4, .grid-5, .grid-6 { column-count: 2; }
+  }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a')">A: 4 Columns (standard)</button>
+  <button class="variant-tab" onclick="showVariant('b')">B: 5 Columns (denser)</button>
+  <button class="variant-tab" onclick="showVariant('c')">C: 6 Columns (tightest)</button>
+</div>
+
+<!-- VARIANT A: 4 Columns -->
+<div id="variant-a" class="variant active">
+  <div class="page">
+    <div class="grid-4">
+      <div class="masthead">
+        <div class="meta"><span>Vol. I — No. 42</span><span>The Daily Calm</span><span>June 21, 2026</span></div>
+        <h1>The Daily Calm</h1>
+      </div>
+
+      <div class="headline">
+        <h2>Your Carbon Year in Review</h2>
+      </div>
+
+      <div class="stat-box">
+        <span class="number">8.4</span>
+        <span class="unit">tonnes CO₂e / year</span>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>How You Stack Up</h3>
+        <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2 tonnes, reflecting a commuting-heavy lifestyle balanced by plant-forward eating. Transportation accounts for 42% of your total — a pattern the Calm research team sees increasingly among urban professionals who drive solo but eat sustainably. The largest single contributor remains your daily 45-minute commute, burning roughly 2.8 tonnes of CO₂e per year.</p>
+        <p>Combined with one round-trip flight to visit family, aviation and ground transport dominate the ledger. Your home energy use, at 18% of the total, is actually below average for your housing type — suggesting your insulation and appliance choices are already working in your favor.</p>
+        <p class="jump-line">See CARBON, Page A3</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By Emma Hartley, Staff Writer</p>
+        <h3>Your Top Three Actions for the Year Ahead</h3>
+        <p><strong>1. Swap one commute day.</strong> Working from home just one extra day per week would cut 0.7 tonnes — nearly 8% of your total — without any lifestyle disruption. Your employer already supports hybrid work, so this is purely a habit change.</p>
+        <p><strong>2. Turn down the thermostat.</strong> Home energy is your quiet contributor at 18%. Dropping two degrees in winter months could save 0.4 tonnes annually, and you would barely notice the difference in a well-insulated space.</p>
+        <p><strong>3. Eat the seasons.</strong> Your diet is already 60% plant-based. Going to 80% — swapping beef for lentils in two weekly meals — would trim another 0.3 tonnes. Small change, meaningful compounding.</p>
+        <p class="jump-line">See ACTIONS, Page A4</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Category Breakdown</h3>
+        <p>Transport: 3.5 t — Daily commute, one round-trip flight, local travel</p>
+        <p>Home Energy: 1.5 t — Natural gas heating, electricity, appliances</p>
+        <p>Diet: 1.4 t — Meat and dairy consumption, food waste</p>
+        <p>Goods &amp; Services: 1.2 t — Clothing purchases, electronics, entertainment</p>
+        <p>Waste: 0.8 t — Landfill contribution, recycling shortfall</p>
+        <p class="jump-line">See LEDGER, Page B1</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By Your AI Coach</p>
+        <h3>From Your Interview</h3>
+        <p>"I had no idea my morning coffee run was adding up. The oat milk helps, but the disposable cup and lid — I never thought about it before this conversation. Over a year, that is hundreds of cups."</p>
+        <p>"Flying home for the holidays felt unavoidable. Now I am wondering if the train is actually faster when you count airport time and security lines. Portland to Seattle is barely three hours by rail."</p>
+        <p class="jump-line">See INTERVIEW, Page C2</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Your Tracking Streak: 12 Days</h3>
+        <p>You have tracked your daily carbon for 12 consecutive days — nearly two weeks of conscious living. Your longest streak stands at 18 days, set in early June. The Calm community average is 8 days, putting you comfortably ahead of the curve. Total days tracked: 34 since you began.</p>
+        <p class="jump-line">See DASHBOARD, Page D1</p>
+      </div>
+
+      <div class="footer">The Daily Calm — Serving the carbon-conscious — calm.app — June 21, 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT B: 5 Columns -->
+<div id="variant-b" class="variant">
+  <div class="page">
+    <div class="grid-5">
+      <div class="masthead">
+        <div class="meta"><span>Vol. I — No. 42</span><span>The Daily Calm</span><span>June 21, 2026</span></div>
+        <h1>The Daily Calm</h1>
+      </div>
+
+      <div class="headline">
+        <h2>Your Carbon Year in Review</h2>
+      </div>
+
+      <div class="stat-box">
+        <span class="number">8.4</span>
+        <span class="unit">tonnes CO₂e / year</span>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>How You Stack Up</h3>
+        <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2 tonnes, reflecting a commuting-heavy lifestyle balanced by plant-forward eating. Transportation accounts for 42% of your total — a pattern the Calm research team sees increasingly among urban professionals who drive solo but eat sustainably.</p>
+        <p>The largest single contributor remains your daily 45-minute commute, burning roughly 2.8 tonnes of CO₂e per year. Combined with one round-trip flight to visit family, aviation and ground transport dominate the ledger. Your home energy use, at 18% of the total, is actually below average for your housing type.</p>
+        <p class="jump-line">See CARBON, Page A3</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By Emma Hartley</p>
+        <h3>Your Top Three Actions</h3>
+        <p><strong>1. Swap one commute day.</strong> Working from home just one extra day per week would cut 0.7 tonnes — nearly 8% of your total — without any lifestyle disruption.</p>
+        <p><strong>2. Turn down the thermostat.</strong> Home energy is your quiet contributor at 18%. Dropping two degrees in winter could save 0.4 tonnes annually, and you would barely notice.</p>
+        <p><strong>3. Eat the seasons.</strong> Your diet is already 60% plant-based. Going to 80% — swapping beef for lentils in two weekly meals — would trim another 0.3 tonnes. Small change, meaningful compounding.</p>
+        <p class="jump-line">See ACTIONS, Page A4</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Category Breakdown</h3>
+        <p>Transport: 3.5 t — Commute, flight, local travel</p>
+        <p>Home Energy: 1.5 t — Heating, electricity, appliances</p>
+        <p>Diet: 1.4 t — Meat, dairy, food waste</p>
+        <p>Goods &amp; Services: 1.2 t — Clothing, electronics</p>
+        <p>Waste: 0.8 t — Landfill, recycling shortfall</p>
+        <p class="jump-line">See LEDGER, Page B1</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By Your AI Coach</p>
+        <h3>From Your Interview</h3>
+        <p>"I had no idea my morning coffee run was adding up. The oat milk helps, but the disposable cup and lid — I never thought about it before this conversation. Over a year, that is hundreds of cups."</p>
+        <p>"Flying home for the holidays felt unavoidable. Now I am wondering if the train is actually faster when you count airport time. Portland to Seattle is barely three hours by rail."</p>
+        <p class="jump-line">See INTERVIEW, Page C2</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Your Tracking Streak: 12 Days</h3>
+        <p>You have tracked your daily carbon for 12 consecutive days. Longest streak: 18 days, set in early June. The Calm community average is 8 days. Total days tracked: 34 since you began.</p>
+        <p class="jump-line">See DASHBOARD, Page D1</p>
+      </div>
+
+      <div class="footer">The Daily Calm — calm.app — June 21, 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT C: 6 Columns -->
+<div id="variant-c" class="variant">
+  <div class="page">
+    <div class="grid-6">
+      <div class="masthead">
+        <div class="meta"><span>Vol. I — No. 42</span><span>The Daily Calm</span><span>June 21, 2026</span></div>
+        <h1>The Daily Calm</h1>
+      </div>
+
+      <div class="headline">
+        <h2>Your Carbon Year in Review</h2>
+      </div>
+
+      <div class="stat-box">
+        <span class="number">8.4</span>
+        <span class="unit">tonnes CO₂e / year</span>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>How You Stack Up</h3>
+        <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2 tonnes, reflecting a commuting-heavy lifestyle balanced by plant-forward eating. Transportation accounts for 42% of your total — a pattern the Calm research team sees increasingly among urban professionals who drive solo but eat sustainably. The largest single contributor remains your daily 45-minute commute.</p>
+        <p>Combined with one round-trip flight to visit family, aviation and ground transport dominate the ledger. Your home energy use, at 18% of the total, is actually below average for your housing type — suggesting your insulation and appliance choices are already working in your favor.</p>
+        <p class="jump-line">See CARBON, Page A3</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By Emma Hartley</p>
+        <h3>Your Top Three Actions</h3>
+        <p><strong>1. Swap one commute day.</strong> Working from home just one extra day per week would cut 0.7 tonnes — nearly 8% of your total — without any lifestyle disruption. Your employer already supports hybrid work, so this is purely a habit change.</p>
+        <p><strong>2. Turn down the thermostat.</strong> Home energy is your quiet contributor at 18%. Dropping two degrees in winter months could save 0.4 tonnes annually, and you would barely notice the difference.</p>
+        <p><strong>3. Eat the seasons.</strong> Your diet is already 60% plant-based. Going to 80% — swapping beef for lentils in two weekly meals — would trim another 0.3 tonnes.</p>
+        <p class="jump-line">See ACTIONS, Page A4</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Category Breakdown</h3>
+        <p>Transport: 3.5 t — Commute, flight, local travel</p>
+        <p>Home Energy: 1.5 t — Heating, electricity, appliances</p>
+        <p>Diet: 1.4 t — Meat, dairy, food waste</p>
+        <p>Goods &amp; Services: 1.2 t — Clothing, electronics, entertainment</p>
+        <p>Waste: 0.8 t — Landfill, recycling shortfall</p>
+        <p class="jump-line">See LEDGER, Page B1</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By Your AI Coach</p>
+        <h3>From Your Interview</h3>
+        <p>"I had no idea my morning coffee run was adding up. The oat milk helps, but the disposable cup and lid — I never thought about it before this conversation. Over a year, that is hundreds of cups."</p>
+        <p>"Flying home for the holidays felt unavoidable. Now I am wondering if the train is actually faster when you count airport time and security lines. Portland to Seattle is barely three hours by rail."</p>
+        <p class="jump-line">See INTERVIEW, Page C2</p>
+      </div>
+
+      <div class="story-section justify">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Your Tracking Streak: 12 Days</h3>
+        <p>You have tracked your daily carbon for 12 consecutive days — nearly two weeks of conscious living. Your longest streak stands at 18 days. The Calm community average is 8 days, putting you ahead of the curve. Total days tracked: 34.</p>
+        <p class="jump-line">See DASHBOARD, Page D1</p>
+      </div>
+
+      <div class="footer">The Daily Calm — calm.app — June 21, 2026</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div id="sketch-tools">
+  <span style="opacity:0.6"></span>
+  <button onclick="resize(375)">Phone</button>
+  <button onclick="resize(768)">Tablet</button>
+  <button onclick="resize(1280)">Full</button>
+</div>
+
+<script>
+function showVariant(id) {
+  document.querySelectorAll('.variant').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).style.display = 'block';
+  event.target.classList.add('active');
+}
+function resize(w) {
+  document.querySelectorAll('.variant.active .page').forEach(el => { el.style.maxWidth = w + 'px'; });
+}
+</script>
+</body>
+</html>
