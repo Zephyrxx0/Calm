@@ -309,7 +309,16 @@ export default function ChatInterface({
       {/* Edition dialog */}
       {endChatData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8">
+          <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8 relative">
+            <button
+              onClick={() => setEndChatData(null)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface transition-colors"
+              aria-label="Close"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M3 3L11 11M11 3L3 11" />
+              </svg>
+            </button>
             <h2 className="text-xl font-serif text-foreground mb-2">
               Your Edition is Ready
             </h2>
