@@ -92,11 +92,11 @@ function Hero({ onSignIn }: { onSignIn: () => void }) {
           ) : user ? (
             <Link
               href="/interview"
-              className="group inline-flex items-center gap-3 rounded-full bg-white/25 backdrop-blur-2xl border border-white/40 px-8 py-4 text-sm font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/35 hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]"
+              className="group inline-flex items-center gap-3 rounded-full bg-white/25 backdrop-blur-2xl border border-white/40 px-8 py-3 text-sm font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/35 hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Begin Your Interview</span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-white">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-white">
                   <path
                     d="M5.25 10.5L8.75 7L5.25 3.5"
                     stroke="currentColor"
@@ -110,11 +110,11 @@ function Hero({ onSignIn }: { onSignIn: () => void }) {
           ) : (
             <button
               onClick={onSignIn}
-              className="group inline-flex items-center gap-3 rounded-full bg-white/25 backdrop-blur-2xl border border-white/40 px-8 py-4 text-sm font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/35 hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className="group inline-flex items-center gap-3 rounded-full bg-white/25 backdrop-blur-2xl border border-white/40 px-8 py-3 text-sm font-medium text-white shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white/35 hover:shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               <span>Sign in to begin</span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-white">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 backdrop-blur-sm transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-1 group-hover:-translate-y-[1px] group-hover:scale-105">
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none" className="text-white">
                   <path
                     d="M5.25 10.5L8.75 7L5.25 3.5"
                     stroke="currentColor"
