@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const sessionId = searchParams.get("session_id") || "";
 
     const res = await fetch(
-      `${BACKEND_URL}/snapshot?session_id=${encodeURIComponent(sessionId)}`,
+      `${BACKEND_URL}/api/snapshot?session_id=${encodeURIComponent(sessionId)}`,
       {
         method: "POST",
         headers: { Authorization: auth },
@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
 
     let targetUrl: string;
     if (snapshotId) {
-      targetUrl = `${BACKEND_URL}/snapshot/${encodeURIComponent(snapshotId)}`;
+      targetUrl = `${BACKEND_URL}/api/snapshot/${encodeURIComponent(snapshotId)}`;
     } else if (sessionId) {
-      targetUrl = `${BACKEND_URL}/snapshot?session_id=${encodeURIComponent(sessionId)}`;
+      targetUrl = `${BACKEND_URL}/api/snapshot?session_id=${encodeURIComponent(sessionId)}`;
     } else {
       return NextResponse.json({ error: "Missing query param" }, { status: 400 });
     }
