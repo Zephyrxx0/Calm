@@ -36,6 +36,22 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  // Persist edition data when interview ends
+  useEffect(() => {
+    if (endChatData && messages.length > 0) {
+      sessionStorage.setItem(
+        `edition_${sessionId}`,
+        JSON.stringify({
+          footprint: {
+            total_co2e: endChatData.total_tonnes * 1000,
+            breakdown: endChatData.breakdown,
+          },
+          messages: messages.map((m) => ({ role: m.role, content: m.text })),
+        })
+      );
+    }
+  }, [endChatData, sessionId, messages]);
+
   // Typing animation refs
   const pendingBufferRef = useRef("");
   const currentAiIdRef = useRef<string | null>(null);
