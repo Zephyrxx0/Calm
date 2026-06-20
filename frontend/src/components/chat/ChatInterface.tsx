@@ -34,6 +34,7 @@ export default function ChatInterface({
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [endChatData, setEndChatData] = useState<EndChatData | null>(null);
+  const [dialogDismissed, setDialogDismissed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -335,11 +336,11 @@ export default function ChatInterface({
       </div>
 
       {/* Edition dialog */}
-      {endChatData && (
+      {endChatData && !dialogDismissed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8 relative">
             <button
-              onClick={() => setEndChatData(null)}
+              onClick={() => setDialogDismissed(true)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface transition-colors"
               aria-label="Close"
             >
@@ -394,6 +395,21 @@ export default function ChatInterface({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Reopen dialog banner — shown after user dismisses the edition dialog */}
+      {endChatData && dialogDismissed && (
+        <div className="px-1 py-2">
+          <button
+            onClick={() => setDialogDismissed(false)}
+            className="w-full rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent hover:bg-accent/10 transition-colors flex items-center justify-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 7L6 11L12 3" />
+            </svg>
+            Your edition is ready — view results
+          </button>
         </div>
       )}
 
