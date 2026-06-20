@@ -288,7 +288,7 @@ export default function ChatInterface({
     <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4">
       {/* Messages */}
       {endChatData && dialogDismissed && (
-        <div className="sticky top-0 z-20 -mx-4 px-4 py-2.5 bg-background/90 backdrop-blur-sm border-b border-accent/15 flex items-center justify-between">
+        <div className="fixed top-[69px] left-0 right-0 z-50 px-4 py-2.5 bg-background/90 backdrop-blur-sm border-b border-accent/15 flex items-center justify-between">
           <span className="text-sm text-accent font-sans">Your Edition is ready</span>
           <button
             onClick={() => setDialogDismissed(false)}
