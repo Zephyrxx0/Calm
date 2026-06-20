@@ -1,0 +1,31 @@
+:root {
+  /* Newspaper palette — 2000 broadsheet era */
+  --color-paper: #FAFAF8;
+  --color-paper-cream: #F5F0E8;
+  --color-ink: #1A1A1A;
+  --color-ink-soft: #2C2C2A;
+  --color-ink-muted: #6B6B68;
+  --color-ink-light: #9A9A97;
+  --color-rule: #D4D4CD;
+  --color-rule-light: #E5E5E2;
+  --color-accent: #C2856B;
+
+  /* Typography — Playfair Display + PT Serif */
+  --font-headline: 'Playfair Display', 'Times New Roman', Georgia, serif;
+  --font-body: 'PT Serif', Georgia, 'Times New Roman', serif;
+
+  /* Spacing — inch-based */
+  --space-paper-pad: 0.75in;
+  --space-col-gap: 0.5in;
+  --space-section: 0.35in;
+
+  /* Column structure */
+  --col-count: 4;
+  --col-rule: 1px solid var(--color-rule);
+
+  /* Effects */
+  --fold-opacity: 0.08;
+  --grain-opacity: 0.05;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=block');

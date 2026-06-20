@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 001: Newspaper Masthead & Layout</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e0ddd5;
+    font-family: var(--font-body);
+    padding-top: 48px;
+    padding-bottom: 80px;
+  }
+
+  /* Tab nav */
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: #2C2C2A; border-bottom: 1px solid #1A1A1A;
+    padding: 8px 16px; display: flex; gap: 8px; font-family: system-ui;
+  }
+  #variant-nav button {
+    padding: 6px 14px; border: 1px solid #555; border-radius: 4px;
+    background: #3a3a38; color: #ccc; cursor: pointer; font-size: 12px;
+    transition: all 0.15s ease;
+  }
+  #variant-nav button.active {
+    background: #C2856B; color: #fff; border-color: #C2856B;
+  }
+  #variant-nav button:hover:not(.active) {
+    background: #4a4a48; color: #fff;
+  }
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  /* Sketch toolbar */
+  #sketch-tools {
+    position: fixed; bottom: 12px; right: 12px; z-index: 9999;
+    font-family: system-ui; font-size: 12px;
+    background: rgba(0,0,0,0.75); color: white;
+    padding: 8px 12px; border-radius: 8px;
+    opacity: 0.35; transition: opacity 0.2s;
+    display: flex; gap: 10px; align-items: center;
+  }
+  #sketch-tools:hover { opacity: 1; }
+  #sketch-tools button {
+    background: #555; color: #fff; border: none; border-radius: 3px;
+    padding: 3px 8px; cursor: pointer; font-size: 11px;
+  }
+  #sketch-tools button:hover { background: #777; }
+  #sketch-tools select {
+    background: #555; color: #fff; border: none; border-radius: 3px;
+    padding: 3px 6px; font-size: 11px;
+  }
+
+  /* ============================================================
+     VARIANT A: Clean Broadsheet (2000s)
+     ============================================================ */
+  .page-a {
+    width: 100%; max-width: 1280px; margin: 0 auto;
+    background: #FAFAF8; color: #2C2C2A;
+    padding: 0.6in 0.5in;
+    font-family: var(--font-body);
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .page-a .grid {
+    column-count: 4; column-gap: 0.45in;
+    column-rule: 1px solid #D4D4CD;
+    text-align: justify;
+  }
+  .page-a .masthead {
+    column-span: all; text-align: center; margin-bottom: 0.3in;
+    padding-bottom: 0.12in;
+    border-bottom: 2px solid #2C2C2A;
+    border-top: 2px solid #2C2C2A;
+    padding-top: 0.12in;
+  }
+  .page-a .masthead h1 {
+    font-family: var(--font-headline); font-size: 42px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: #1A1A1A; margin: 0.08in 0 0.04in;
+  }
+  .page-a .masthead .meta {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-headline); font-size: 9px;
+    color: #6B6B68; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0 0.2in;
+  }
+  .page-a .headline {
+    column-span: all; margin-bottom: 0.25in;
+    border-bottom: 1px solid #D4D4CD; padding-bottom: 0.15in;
+  }
+  .page-a .headline h2 {
+    font-family: var(--font-headline); font-size: 32px; font-weight: 700;
+    line-height: 1.15; color: #1A1A1A; text-align: center;
+  }
+  .page-a .headline .deck {
+    font-family: var(--font-headline); font-size: 14px; font-style: italic;
+    color: #6B6B68; text-align: center; margin-top: 0.06in;
+  }
+  .page-a .photo-area {
+    column-span: all; background: repeating-conic-gradient(#e8e8e4 0% 25%, #f0f0ec 0% 50%) 50% / 12px 12px;
+    height: 220px; margin-bottom: 0.25in;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #D4D4CD;
+  }
+  .page-a .photo-area .placeholder {
+    font-family: system-ui; font-size: 11px; color: #9A9A97;
+    text-align: center;
+  }
+  .page-a .story-section {
+    break-inside: avoid; margin-bottom: 0.25in;
+  }
+  .page-a .story-section h3 {
+    font-family: var(--font-headline); font-size: 14px; font-weight: 700;
+    color: #1A1A1A; margin-bottom: 0.06in;
+    text-align: left;
+  }
+  .page-a .story-section p {
+    font-size: 9.5px; line-height: 1.5; color: #2C2C2A;
+    margin-bottom: 0.08in; text-align: justify;
+  }
+  .page-a .byline {
+    font-size: 9px; font-style: italic; color: #6B6B68;
+    text-align: left; margin-bottom: 0.04in;
+  }
+  .page-a .jump-line {
+    font-size: 8px; font-variant: small-caps; color: #6B6B68;
+    text-align: right; margin-top: 0.04in;
+  }
+  .page-a .footer {
+    column-span: all; text-align: center; margin-top: 0.2in;
+    padding-top: 0.1in; border-top: 1px solid #D4D4CD;
+    font-size: 9px; color: #9A9A97; letter-spacing: 0.05em;
+  }
+  .page-a .fold-line {
+    position: absolute; left: 0; right: 0; top: 55%;
+    height: 2px; background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.08) 20%, rgba(0,0,0,0.08) 80%, transparent 100%);
+    pointer-events: none;
+  }
+  .page-a .fold-line::after {
+    content: ''; position: absolute; inset: -2px 0 4px 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.06) 0%, transparent 100%);
+  }
+
+  /* ============================================================
+     VARIANT B: Dense Tabloid (1990s)
+     ============================================================ */
+  .page-b {
+    width: 100%; max-width: 1280px; margin: 0 auto;
+    background: #F5F0E8; color: #1A1A1A;
+    padding: 0.4in 0.35in;
+    font-family: var(--font-body);
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .page-b .grid {
+    column-count: 5; column-gap: 0.25in;
+    column-rule: 0.5px solid #c5c0b5;
+    text-align: justify;
+  }
+  .page-b .masthead {
+    column-span: all; text-align: center; margin-bottom: 0.2in;
+    border-bottom: 3px double #1A1A1A;
+    border-top: 3px double #1A1A1A;
+    padding: 0.08in 0;
+  }
+  .page-b .masthead h1 {
+    font-family: var(--font-headline); font-size: 48px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: #1A1A1A; margin: 0.04in 0;
+  }
+  .page-b .masthead .meta {
+    font-family: var(--font-headline); font-size: 8px;
+    color: #555; letter-spacing: 0.15em; text-transform: uppercase;
+    display: flex; justify-content: space-between;
+    padding: 0 0.1in;
+  }
+  .page-b .headline {
+    column-span: all; margin-bottom: 0.2in;
+    border-bottom: 1px solid #c5c0b5; padding-bottom: 0.1in;
+  }
+  .page-b .headline h2 {
+    font-family: var(--font-headline); font-size: 36px; font-weight: 700;
+    line-height: 1.1; color: #1A1A1A; text-align: center;
+    text-transform: uppercase; letter-spacing: 0.02em;
+  }
+  .page-b .photo-area {
+    column-span: all; background: repeating-conic-gradient(#e0dcd0 0% 25%, #ebe7dd 0% 50%) 50% / 8px 8px;
+    height: 200px; margin-bottom: 0.2in; border: 1px solid #c5c0b5;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .page-b .story-section {
+    break-inside: avoid; margin-bottom: 0.2in;
+  }
+  .page-b .story-section h3 {
+    font-family: var(--font-headline); font-size: 13px; font-weight: 700;
+    color: #1A1A1A; margin-bottom: 0.04in;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .page-b .story-section p {
+    font-size: 8.5px; line-height: 1.35; color: #1A1A1A;
+    margin-bottom: 0.06in; text-align: justify;
+    word-spacing: -0.5px;
+  }
+  .page-b .byline {
+    font-size: 8px; font-style: italic; color: #5a5a55; margin-bottom: 0.03in;
+  }
+  .page-b .jump-line {
+    font-size: 7px; font-variant: small-caps; color: #5a5a55;
+    text-align: right; font-weight: 700;
+  }
+  .page-b .footer {
+    column-span: all; text-align: center; margin-top: 0.15in;
+    padding-top: 0.08in; border-top: 1px double #c5c0b5;
+    font-size: 8px; color: #8a8a85;
+  }
+
+  /* ============================================================
+     VARIANT C: Modern Hybrid (2008 campus paper)
+     ============================================================ */
+  .page-c {
+    width: 100%; max-width: 1280px; margin: 0 auto;
+    background: #FFFFFF; color: #1a1a1a;
+    padding: 0.5in 0.5in;
+    font-family: var(--font-body);
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  }
+  .page-c .grid {
+    column-count: 4; column-gap: 0.35in;
+    column-rule: 1px solid #ddd;
+    text-align: justify;
+  }
+  .page-c .masthead {
+    column-span: all; text-align: center; margin-bottom: 0.25in;
+    padding-bottom: 0.1in;
+    border-bottom: 1px solid #333;
+  }
+  .page-c .masthead h1 {
+    font-family: var(--font-headline); font-size: 38px; font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #1a1a1a; margin: 0.06in 0;
+  }
+  .page-c .masthead .meta {
+    display: flex; justify-content: space-between;
+    font-family: system-ui, sans-serif; font-size: 9px;
+    color: #666; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 0 0.3in;
+  }
+  .page-c .headline {
+    column-span: all; margin-bottom: 0.2in;
+  }
+  .page-c .headline h2 {
+    font-family: var(--font-headline); font-size: 28px; font-weight: 700;
+    line-height: 1.2; color: #1a1a1a; text-align: left;
+  }
+  .page-c .headline .deck {
+    font-family: var(--font-body); font-size: 13px;
+    color: #444; margin-top: 0.04in;
+  }
+  .page-c .kicker {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    color: #C2856B; letter-spacing: 0.1em; margin-bottom: 0.03in;
+  }
+  .page-c .photo-area {
+    column-span: all; background: repeating-conic-gradient(#e8e8e6 0% 25%, #f4f4f2 0% 50%) 50% / 10px 10px;
+    height: 200px; margin-bottom: 0.2in; border: 1px solid #ddd;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .page-c .story-section {
+    break-inside: avoid; margin-bottom: 0.2in;
+  }
+  .page-c .story-section h3 {
+    font-family: var(--font-headline); font-size: 13px; font-weight: 700;
+    color: #333; margin-bottom: 0.04in;
+  }
+  .page-c .story-section p {
+    font-size: 9.5px; line-height: 1.45; color: #333;
+    margin-bottom: 0.06in; text-align: justify;
+  }
+  .page-c .byline {
+    font-size: 9px; font-style: italic; color: #666; margin-bottom: 0.03in;
+  }
+  .page-c .jump-line {
+    font-size: 8px; font-variant: small-caps; color: #888;
+    text-align: right;
+  }
+  .page-c .sidebar-box {
+    column-span: all; border: 1px solid #ccc; padding: 0.15in;
+    margin-bottom: 0.25in; background: #fafaf8;
+  }
+  .page-c .sidebar-box h4 {
+    font-family: system-ui, sans-serif; font-size: 11px;
+    font-weight: 700; text-transform: uppercase; color: #C2856B;
+    margin-bottom: 0.08in;
+  }
+  .page-c .sidebar-box p {
+    font-size: 9px; line-height: 1.4; color: #444;
+  }
+  .page-c .footer {
+    column-span: all; text-align: center; margin-top: 0.15in;
+    padding-top: 0.08in; border-top: 1px solid #ddd;
+    font-size: 9px; color: #999;
+    font-family: system-ui, sans-serif;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-a .grid, .page-b .grid, .page-c .grid { column-count: 2; }
+    .page-a .masthead h1, .page-b .masthead h1, .page-c .masthead h1 { font-size: 28px; }
+    .page-a .headline h2 { font-size: 22px; }
+    .page-b .headline h2 { font-size: 24px; }
+    .page-c .headline h2 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a')">A: Clean Broadsheet (2000s) ★ Selected</button>
+  <button class="variant-tab" onclick="showVariant('b')">B: Dense Tabloid (1990s)</button>
+  <button class="variant-tab" onclick="showVariant('c')">C: Modern Hybrid (2008)</button>
+</div>
+
+<!-- VARIANT A: Clean Broadsheet -->
+<div id="variant-a" class="variant active">
+  <div class="page-a" id="broadA">
+    <div class="grid">
+      <!-- Masthead -->
+      <div class="masthead">
+        <div class="meta">
+          <span>Vol. I — No. 42</span>
+          <span>Serving the Carbon-Conscious</span>
+          <span>June 21, 2026</span>
+        </div>
+        <h1>The Daily Calm</h1>
+      </div>
+
+      <!-- Lead story -->
+      <div class="headline">
+        <h2>Your Carbon Year in Review</h2>
+        <p class="deck">A lifestyle audit reveals a 8.4-tonne footprint — how you compare and what comes next</p>
+      </div>
+
+      <!-- Photo area (halftone placeholder) -->
+      <div class="photo-area">
+        <div class="placeholder">Lead Photo<br><span style="font-size:9px">(halftone applied in implementation)</span></div>
+      </div>
+
+      <!-- Side columns: stories -->
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>How You Stack Up</h3>
+        <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2 tonnes, reflecting a commuting-heavy lifestyle balanced by plant-forward eating. Transportation accounts for 42% of your total — a pattern the Calm research team sees increasingly among urban professionals who drive solo but eat sustainably.</p>
+        <p>The largest single contributor: your daily 45-minute commute, burning roughly 2.8 tonnes of CO₂e per year. Combined with one round-trip flight to visit family, aviation and ground transport dominate the ledger.</p>
+        <p class="jump-line">See CARBON, Page A3</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By Emma Hartley, Staff Writer</p>
+        <h3>Your Top Three Actions</h3>
+        <p><strong>1. Swap one commute day.</strong> Working from home just one extra day per week would cut 0.7 tonnes — nearly 8% of your total — without lifestyle disruption.</p>
+        <p><strong>2. Turn down the thermostat.</strong> Home energy is your quiet contributor at 18%. Dropping two degrees in winter months could save 0.4 tonnes annually, and you'd barely notice.</p>
+        <p><strong>3. Eat the seasons.</strong> Your diet is already 60% plant-based. Going to 80% — swapping beef for lentils in two weekly meals — would trim another 0.3 tonnes.</p>
+        <p class="jump-line">See ACTIONS, Page A4</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Category Breakdown</h3>
+        <p>Transport: 3.5 t — Commuting, flights, local travel</p>
+        <p>Home Energy: 1.5 t — Heating, electricity, appliances</p>
+        <p>Diet: 1.4 t — Meat, dairy, food waste</p>
+        <p>Goods & Services: 1.2 t — Clothing, electronics, misc.</p>
+        <p>Waste: 0.8 t — Landfill, recycling shortfall</p>
+        <p class="jump-line">See LEDGER, Page B1</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By Your AI Coach</p>
+        <h3>From Your Interview</h3>
+        <p>"I had no idea my morning coffee run was adding up. The oat milk helps, but the disposable cup... I never thought about it before this conversation."</p>
+        <p>"Flying home for the holidays felt unavoidable. Now I'm wondering if the train is actually faster when you count airport time."</p>
+        <p class="jump-line">See INTERVIEW, Page C2</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Your Streak: 12 Days</h3>
+        <p>You've tracked your daily carbon for 12 consecutive days — that's nearly two weeks of conscious living. Your longest streak stands at 18 days, set in early June. The Calm community average is 8 days. You're ahead, but your personal best is within reach.</p>
+        <p>Total days tracked: 34 since you started. That's more data than 78% of Calm users.</p>
+        <p class="jump-line">See DASHBOARD, Page D1</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        Generated by Calm — Track your carbon footprint at calm.app
+      </div>
+    </div>
+    <!-- Fold crease -->
+    <div class="fold-line"></div>
+  </div>
+</div>
+
+<!-- VARIANT B: Dense Tabloid -->
+<div id="variant-b" class="variant">
+  <div class="page-b">
+    <div class="grid">
+      <div class="masthead">
+        <div class="meta">
+          <span>Vol. I No. 42</span>
+          <span>21 June 2026</span>
+          <span>Price: Free</span>
+        </div>
+        <h1>The Daily Calm</h1>
+      </div>
+
+      <div class="headline">
+        <h2>8.4 Tonnes: Your Carbon Year</h2>
+      </div>
+
+      <div class="photo-area">
+        <div class="placeholder">Lead Photo<br><span style="font-size:9px">(halftone in implementation)</span></div>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>The Commuter's Burden</h3>
+        <p>Transportation takes the largest bite of your carbon pie at 42%, with your daily solo commute contributing the lion's share. At 2.8 tonnes annually, that 45-minute drive each way is the single biggest line item on your environmental balance sheet — more than your entire diet or home energy use combined.</p>
+        <p>One round-trip flight to visit family added another 0.9 tonnes. While infrequent, aviation punches above its weight: a single cross-country flight produces more CO₂ per passenger than a month of commuting.</p>
+        <p class="jump-line">See TRANSPORT, p. A3</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By Emma Hartley</p>
+        <h3>Home: The Quiet Culprit</h3>
+        <p>Home energy sits at 18% of your footprint — 1.5 tonnes — but none of it feels dramatic. The thermostat set to 72°F all winter. Lights left on in empty rooms. An older refrigerator humming in the basement. These ambient costs accumulate silently while we focus on the visible ones.</p>
+        <p>A smart thermostat and some LED bulbs would pay for themselves in under a year, and cut this category by nearly a third.</p>
+        <p class="jump-line">See HOME, p. A4</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Diet: You're Ahead</h3>
+        <p>At 1.4 tonnes, your diet is the bright spot. Already 60% plant-based, your footprint here is 35% below the national average. Swapping two beef meals per week for lentils would push you to 1.1 tonnes — elite territory.</p>
+        <p class="jump-line">See DIET, p. B1</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Your Words</h3>
+        <p>"I never thought about my coffee cup before. The oat milk helps, but the single-use cup... it adds up."</p>
+        <p>"Flying home feels unavoidable. But maybe the train is faster when you count airport time."</p>
+        <p class="jump-line">See INTERVIEW, p. C2</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Streak Watch</h3>
+        <p>12 consecutive days tracked. Longest: 18 days. You're 50% above the Calm community average of 8 days. Keep going — your personal best is in sight.</p>
+        <p class="jump-line">See DASHBOARD, p. D1</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>How You Compare</h3>
+        <p>Your 8.4 tonnes sits above the national average of 7.2 but well below the global high-emitter average of 15+. For your demographic — urban professional, single household — you're slightly above median but within one standard deviation. The good news: your trajectory is downward since you started tracking.</p>
+      </div>
+
+      <div class="footer">
+        The Daily Calm — Serving the carbon-conscious since 2026 — calm.app
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT C: Modern Hybrid -->
+<div id="variant-c" class="variant">
+  <div class="page-c">
+    <div class="grid">
+      <div class="masthead">
+        <div class="meta">
+          <span>Vol. I — No. 42</span>
+          <span>calm.app</span>
+          <span>June 21, 2026</span>
+        </div>
+        <h1>The Daily Calm</h1>
+      </div>
+
+      <div class="headline">
+        <p class="kicker">Carbon Edition</p>
+        <h2>Your Year in Climate: A Personal Audit</h2>
+        <p class="deck">From your commute to your coffee, here's what 8.4 tonnes looks like — and what you can do about it</p>
+      </div>
+
+      <div class="photo-area">
+        <div class="placeholder">Lead Photo<br><span style="font-size:9px">(halftone in implementation)</span></div>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">The Calm Newsroom &middot; June 21, 2026</p>
+        <h3>The Big Picture</h3>
+        <p>Your carbon footprint for the past year comes in at 8.4 tonnes of CO₂ equivalent. That's above the national average of 7.2 but far from alarming — and more importantly, it's trending down. Since you started tracking 34 days ago, your weekly average has dropped from 0.18 tonnes to 0.15 tonnes.</p>
+        <p>"Awareness is the first and hardest step," says Dr. Sarah Chen, Calm's climate science advisor. "Most people never see their numbers. Once you do, the changes almost make themselves."</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By Emma Hartley, Staff Writer</p>
+        <h3>Transport: Your Biggest Lever</h3>
+        <p>At 3.5 tonnes (42%), transportation dominates your profile. Your 45-minute daily commute accounts for 2.8 tonnes alone — the equivalent of driving from New York to Los Angeles and back, twice, every year. Adding a work-from-home day would save 0.7 tonnes annually with zero lifestyle sacrifice.</p>
+        <p>Your single round-trip flight contributed 0.9 tonnes. Consider rail for your next holiday trip: even at current speeds, a train journey produces roughly 90% less CO₂ per passenger-mile.</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>What You Said</h3>
+        <p>"I never thought about my coffee cup. The oat milk helps, but the single-use cup... it adds up over a year."</p>
+        <p>"Flying home for the holidays felt unavoidable. Now I'm wondering if the train is actually faster when you count airport time and security."</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3>Your Streak</h3>
+        <p><strong>Current:</strong> 12 days &middot; <strong>Longest:</strong> 18 days &middot; <strong>Total:</strong> 34 days tracked</p>
+        <p>You're in the top 22% of Calm users by tracking consistency. The community average streak is 8 days.</p>
+      </div>
+
+      <!-- Sidebar box -->
+      <div class="sidebar-box">
+        <h4>Your Top Actions</h4>
+        <p><strong>1. Remote Wednesday.</strong> One extra WFH day = −0.7 t/yr</p>
+        <p><strong>2. Thermostat at 68°F.</strong> Two degrees cooler = −0.4 t/yr</p>
+        <p><strong>3. Lentil Monday.</strong> Swap beef twice a week = −0.3 t/yr</p>
+        <p style="margin-top:0.08in"><strong>If you do all three:</strong> 7.0 t/yr — below national average.</p>
+      </div>
+
+      <div class="footer">
+        The Daily Calm — calm.app — June 21, 2026
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sketch toolbar -->
+<div id="sketch-tools">
+  <span style="opacity:0.6">📐</span>
+  <button onclick="setWidth(375)">Phone</button>
+  <button onclick="setWidth(768)">Tablet</button>
+  <button onclick="setWidth(1280)">Desktop</button>
+  <button onclick="resetWidth()">Full</button>
+</div>
+
+<script>
+function showVariant(id) {
+  document.querySelectorAll('.variant').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).style.display = 'block';
+  event.target.classList.add('active');
+}
+function setWidth(w) {
+  document.querySelectorAll('.variant.active > div').forEach(el => { el.style.maxWidth = w + 'px'; });
+}
+function resetWidth() {
+  document.querySelectorAll('.variant.active > div').forEach(el => { el.style.maxWidth = '1280px'; });
+}
+</script>
+</body>
+</html>
