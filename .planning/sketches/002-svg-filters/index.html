@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 002: SVG Filter Effects</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #2C2C2A;
+    font-family: system-ui;
+    padding-top: 48px;
+    padding-bottom: 80px;
+  }
+
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: #2C2C2A; border-bottom: 1px solid #1A1A1A;
+    padding: 8px 16px; display: flex; gap: 8px;
+  }
+  #variant-nav button {
+    padding: 6px 14px; border: 1px solid #555; border-radius: 4px;
+    background: #3a3a38; color: #ccc; cursor: pointer; font-size: 12px;
+    transition: all 0.15s ease;
+  }
+  #variant-nav button.active {
+    background: #C2856B; color: #fff; border-color: #C2856B;
+  }
+  #variant-nav button:hover:not(.active) {
+    background: #4a4a48; color: #fff;
+  }
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  /* Filter toggle panel */
+  #filter-panel {
+    position: fixed; top: 48px; right: 12px; z-index: 9997;
+    background: rgba(30,30,28,0.92); color: #ddd;
+    padding: 12px 16px; border-radius: 8px;
+    font-size: 11px; min-width: 200px;
+    border: 1px solid #444;
+  }
+  #filter-panel h4 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px; color: #C2856B;
+  }
+  #filter-panel label {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 0; cursor: pointer;
+  }
+  #filter-panel input[type=checkbox] {
+    accent-color: #C2856B;
+  }
+  #filter-panel .disabled { opacity: 0.4; }
+
+  /* Newspaper page (same across variants for fair comparison) */
+  .page {
+    width: 100%; max-width: 1100px; margin: 0 auto;
+    background: #FAFAF8; color: #2C2C2A;
+    padding: 0.5in 0.5in;
+    font-family: var(--font-body);
+    position: relative;
+    transition: filter 0.3s ease;
+  }
+  .page .grid {
+    column-count: 4; column-gap: 0.4in;
+    column-rule: 1px solid #D4D4CD;
+    text-align: justify;
+  }
+  .page .masthead {
+    column-span: all; text-align: center; margin-bottom: 0.3in;
+    padding-bottom: 0.12in; padding-top: 0.12in;
+    border-bottom: 2px solid #2C2C2A;
+    border-top: 2px solid #2C2C2A;
+  }
+  .page .masthead h1 {
+    font-family: var(--font-headline); font-size: 42px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: #1A1A1A; margin: 0.08in 0 0.04in;
+  }
+  .page .masthead .meta {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: #6B6B68;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .page .headline {
+    column-span: all; margin-bottom: 0.25in;
+    border-bottom: 1px solid #D4D4CD; padding-bottom: 0.12in;
+  }
+  .page .headline h2 {
+    font-family: var(--font-headline); font-size: 32px; font-weight: 700;
+    line-height: 1.15; color: #1A1A1A; text-align: center;
+  }
+  .page .headline .deck {
+    font-size: 14px; font-style: italic; color: #6B6B68;
+    text-align: center; margin-top: 0.04in;
+    font-family: var(--font-headline);
+  }
+  .page .halftone-img {
+    column-span: all; height: 200px; margin-bottom: 0.2in;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200"><defs><radialGradient id="g"><stop offset="0%" stop-color="%23444"/><stop offset="40%" stop-color="%23666"/><stop offset="80%" stop-color="%23aaa"/><stop offset="100%" stop-color="%23ddd"/></radialGradient></defs><rect width="600" height="200" fill="url(%23g)"/><circle cx="120" cy="100" r="50" fill="%23333"/><circle cx="300" cy="80" r="40" fill="%23555"/><circle cx="480" cy="110" r="60" fill="%23333"/><rect x="160" y="140" width="80" height="30" fill="%23444" rx="3"/><rect x="340" y="130" width="60" height="40" fill="%23444" rx="3"/></svg>');
+    background-size: cover; background-position: center;
+    border: 1px solid #D4D4CD;
+    position: relative;
+  }
+  .page .halftone-img::after {
+    content: 'Lead Photo'; position: absolute;
+    bottom: 6px; right: 10px;
+    font-family: system-ui; font-size: 9px; color: rgba(255,255,255,0.6);
+  }
+  .page .story-section {
+    break-inside: avoid; margin-bottom: 0.2in;
+  }
+  .page .story-section h3 {
+    font-family: var(--font-headline); font-size: 14px; font-weight: 700;
+    color: #1A1A1A; margin-bottom: 0.06in;
+    text-align: left;
+  }
+  .page .story-section p {
+    font-size: 9.5px; line-height: 1.5; color: #2C2C2A;
+    margin-bottom: 0.06in; text-align: justify;
+  }
+  .page .byline {
+    font-size: 9px; font-style: italic; color: #6B6B68;
+    margin-bottom: 0.04in; text-align: left;
+  }
+  .page .jump-line {
+    font-size: 8px; font-variant: small-caps; color: #6B6B68;
+    text-align: right; margin-top: 0.03in;
+  }
+  .page .footer {
+    column-span: all; text-align: center; margin-top: 0.15in;
+    padding-top: 0.08in; border-top: 1px solid #D4D4CD;
+    font-size: 9px; color: #9A9A97;
+  }
+
+  /* Fold crease overlay */
+  .fold-overlay {
+    position: absolute; left: 0; right: 0; top: 52%;
+    z-index: 5; pointer-events: none;
+  }
+  .fold-overlay .fold-shadow {
+    height: 3px;
+    background: linear-gradient(90deg,
+      transparent 5%, rgba(0,0,0,0.10) 20%,
+      rgba(0,0,0,0.14) 50%,
+      rgba(0,0,0,0.10) 80%, transparent 95%);
+  }
+  .fold-overlay .fold-bleed {
+    height: 18px;
+    background: linear-gradient(180deg,
+      rgba(180,170,150,0.07) 0%, transparent 100%);
+  }
+
+  /* Layer toggle labels */
+  .layer-label {
+    display: inline-block; padding: 2px 6px; border-radius: 3px;
+    font-size: 10px; font-family: system-ui; margin-left: 4px;
+  }
+  .layer-on { background: #C2856B; color: #fff; }
+  .layer-off { background: #444; color: #888; }
+
+  /* Comparison grid for side-by-side */
+  .compare-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; max-width: 1300px; margin: 0 auto;
+  }
+  .compare-card {
+    background: #3a3a38; border-radius: 6px; padding: 12px;
+  }
+  .compare-card h4 {
+    font-size: 11px; color: #C2856B; text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 8px;
+  }
+  .compare-card .page { box-shadow: none; max-width: none; }
+
+  #sketch-tools {
+    position: fixed; bottom: 12px; right: 12px; z-index: 9999;
+    font-family: system-ui; font-size: 12px;
+    background: rgba(0,0,0,0.75); color: white;
+    padding: 8px 12px; border-radius: 8px;
+    opacity: 0.35; transition: opacity 0.2s;
+    display: flex; gap: 10px; align-items: center;
+  }
+  #sketch-tools:hover { opacity: 1; }
+  #sketch-tools button {
+    background: #555; color: #fff; border: none; border-radius: 3px;
+    padding: 3px 8px; cursor: pointer; font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a')">A: Interactive Layer Toggle</button>
+  <button class="variant-tab" onclick="showVariant('b')">B: Side-by-Side (Before/After)</button>
+  <button class="variant-tab" onclick="showVariant('c')">C: Stacked Progression</button>
+</div>
+
+<!-- Shared SVG filter definitions -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- Paper grain -->
+    <filter id="grain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.06 0" in="noise" result="coloredNoise"/>
+      <feBlend in="SourceGraphic" in2="coloredNoise" mode="multiply"/>
+    </filter>
+
+    <!-- Ink bleed on bold text -->
+    <filter id="ink-bleed" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur stdDeviation="0.6" result="blur"/>
+      <feComponentTransfer in="blur" result="thresholded">
+        <feFuncA type="linear" slope="2.5" intercept="-0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="thresholded"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Halftone dots on images -->
+    <filter id="halftone" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" result="noise"/>
+      <feColorMatrix type="matrix" values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0" in="SourceGraphic" result="gray"/>
+      <feComponentTransfer in="gray" result="posterized">
+        <feFuncR type="discrete" tableValues="0 0 0.2 0.35 0.5 0.65 0.8 0.95 1 1 1"/>
+        <feFuncG type="discrete" tableValues="0 0 0.2 0.35 0.5 0.65 0.8 0.95 1 1 1"/>
+        <feFuncB type="discrete" tableValues="0 0 0.2 0.35 0.5 0.65 0.8 0.95 1 1 1"/>
+      </feComponentTransfer>
+      <feBlend in="posterized" in2="SourceGraphic" mode="multiply" result="blended"/>
+      <feComposite in="blended" in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <!-- Edge wear / vignette -->
+    <filter id="vignette">
+      <feGaussianBlur stdDeviation="25" result="blur"/>
+      <feColorMatrix type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"
+        in="blur" result="mask"/>
+      <feComposite in="SourceGraphic" in2="mask" operator="in"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- VARIANT A: Interactive Layer Toggle -->
+<div id="variant-a" class="variant active">
+  <div id="filter-panel">
+    <h4>Filter Layers</h4>
+    <label><input type="checkbox" checked onchange="updateFilters()" id="chk-grain"> Paper Grain <span class="layer-label layer-on">on</span></label>
+    <label><input type="checkbox" checked onchange="updateFilters()" id="chk-halftone"> Halftone Photos <span class="layer-label layer-on">on</span></label>
+    <label><input type="checkbox" checked onchange="updateFilters()" id="chk-ink"> Ink Bleed <span class="layer-label layer-on">on</span></label>
+    <label><input type="checkbox" checked onchange="updateFold()" id="chk-fold"> Fold Crease <span class="layer-label layer-on">on</span></label>
+    <label><input type="checkbox" onchange="updateFilters()" id="chk-vignette"> Edge Vignette <span class="layer-label layer-off">off</span></label>
+    <hr style="border-color:#444;margin:8px 0">
+    <button onclick="enableAll()" style="background:#C2856B;color:#fff;border:none;border-radius:3px;padding:4px 10px;cursor:pointer;font-size:10px;width:100%">Enable All</button>
+    <button onclick="disableAll()" style="background:#555;color:#ccc;border:none;border-radius:3px;padding:4px 10px;cursor:pointer;font-size:10px;width:100%;margin-top:4px">Disable All</button>
+  </div>
+
+  <div class="page" id="page-a">
+    <div class="grid">
+      <div class="masthead">
+        <div class="meta">
+          <span>Vol. I — No. 42</span>
+          <span>The Daily Calm</span>
+          <span>June 21, 2026</span>
+        </div>
+        <h1 class="bleed-target">The Daily Calm</h1>
+      </div>
+
+      <div class="headline">
+        <h2 class="bleed-target">Your Carbon Year in Review</h2>
+        <p class="deck">An 8.4-tonne footprint — what it means and where to go from here</p>
+      </div>
+
+      <div class="halftone-img halftone-target"></div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3 class="bleed-target">How You Stack Up</h3>
+        <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2, reflecting a commuting-heavy lifestyle balanced by plant-forward eating. Transportation accounts for 42% of your total — the single biggest lever for change.</p>
+        <p class="jump-line">See CARBON, Page A3</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By Emma Hartley</p>
+        <h3 class="bleed-target">Your Top Three Actions</h3>
+        <p><strong>1. Swap one commute day.</strong> Working from home one extra day per week would cut 0.7 tonnes.</p>
+        <p><strong>2. Turn down the thermostat.</strong> Two degrees cooler in winter saves 0.4 tonnes annually.</p>
+        <p><strong>3. Eat the seasons.</strong> Swapping beef for lentils twice a week trims 0.3 tonnes.</p>
+        <p class="jump-line">See ACTIONS, Page A4</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3 class="bleed-target">Category Breakdown</h3>
+        <p>Transport: 3.5 t · Home Energy: 1.5 t · Diet: 1.4 t · Goods: 1.2 t · Waste: 0.8 t</p>
+        <p class="jump-line">See LEDGER, Page B1</p>
+      </div>
+
+      <div class="story-section">
+        <p class="byline">By The Calm Newsroom</p>
+        <h3 class="bleed-target">Your Streak: 12 Days</h3>
+        <p>You've tracked for 12 consecutive days. Longest: 18. Community average: 8. You're in the top 22% by consistency.</p>
+        <p class="jump-line">See DASHBOARD, Page D1</p>
+      </div>
+
+      <div class="footer">
+        Generated by Calm — Track your carbon footprint at calm.app
+      </div>
+    </div>
+    <div class="fold-overlay" id="fold-overlay">
+      <div class="fold-shadow"></div>
+      <div class="fold-bleed"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT B: Side-by-Side -->
+<div id="variant-b" class="variant">
+  <div class="compare-grid">
+    <div class="compare-card">
+      <h4>No Filters (Plain CSS)</h4>
+      <div class="page">
+        <div class="grid">
+          <div class="masthead">
+            <div class="meta"><span>Vol. I — No. 42</span><span>The Daily Calm</span><span>June 21, 2026</span></div>
+            <h1>The Daily Calm</h1>
+          </div>
+          <div class="headline">
+            <h2>Your Carbon Year</h2>
+            <p class="deck">An 8.4-tonne footprint</p>
+          </div>
+          <div style="column-span:all;height:150px;border:1px solid #ddd;margin-bottom:0.2in;background:#eee;"></div>
+          <div class="story-section">
+            <p class="byline">By The Calm Newsroom</p>
+            <h3>How You Stack Up</h3>
+            <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2. Transportation accounts for 42% of your total. Your plant-forward diet keeps food emissions 35% below average.</p>
+          </div>
+          <div class="story-section">
+            <p class="byline">By Emma Hartley</p>
+            <h3>Your Top Actions</h3>
+            <p><strong>1. Remote Wednesday:</strong> −0.7 t/yr<br><strong>2. Thermostat at 68°:</strong> −0.4 t/yr<br><strong>3. Lentil Monday:</strong> −0.3 t/yr</p>
+          </div>
+          <div class="footer">Generated by Calm — calm.app</div>
+        </div>
+      </div>
+    </div>
+    <div class="compare-card">
+      <h4>All Filters Applied</h4>
+      <div class="page" style="filter:url(#grain)">
+        <div class="grid">
+          <div class="masthead">
+            <div class="meta"><span>Vol. I — No. 42</span><span>The Daily Calm</span><span>June 21, 2026</span></div>
+            <h1 style="filter:url(#ink-bleed)">The Daily Calm</h1>
+          </div>
+          <div class="headline">
+            <h2 style="filter:url(#ink-bleed)">Your Carbon Year</h2>
+            <p class="deck">An 8.4-tonne footprint</p>
+          </div>
+          <div style="column-span:all;height:150px;margin-bottom:0.2in;border:1px solid #ddd;filter:url(#halftone);background:linear-gradient(135deg,#c0b090,#e0d8c0,#b0a880,#d0c8b0);"></div>
+          <div class="story-section">
+            <p class="byline">By The Calm Newsroom</p>
+            <h3 style="filter:url(#ink-bleed)">How You Stack Up</h3>
+            <p>Your annual carbon output of 8.4 tonnes sits modestly above the national average of 7.2. Transportation accounts for 42% of your total. Your plant-forward diet keeps food emissions 35% below average.</p>
+          </div>
+          <div class="story-section">
+            <p class="byline">By Emma Hartley</p>
+            <h3 style="filter:url(#ink-bleed)">Your Top Actions</h3>
+            <p><strong>1. Remote Wednesday:</strong> −0.7 t/yr<br><strong>2. Thermostat at 68°:</strong> −0.4 t/yr<br><strong>3. Lentil Monday:</strong> −0.3 t/yr</p>
+          </div>
+          <div class="footer">Generated by Calm — calm.app</div>
+        </div>
+        <div class="fold-overlay"><div class="fold-shadow"></div><div class="fold-bleed"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VARIANT C: Stacked Progression -->
+<div id="variant-c" class="variant">
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:1100px;margin:0 auto;">
+    <div style="text-align:center;color:#9A9A97;font-size:12px;padding:8px;">Scroll down to see filters accumulate layer by layer</div>
+
+    <div class="page" id="c0">
+      <div style="text-align:center;color:#C2856B;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:8px;">LAYER 0: Clean HTML — no filters</div>
+      <div class="grid">
+        <div class="masthead"><h1>The Daily Calm</h1></div>
+        <div class="headline"><h2>Your Carbon Year</h2></div>
+        <div class="halftone-img"></div>
+        <div class="story-section"><h3>How You Stack Up</h3><p>Your annual carbon output of 8.4 tonnes sits modestly above the national average. Transportation dominates at 42%.</p></div>
+        <div class="footer">Calm — calm.app</div>
+      </div>
+    </div>
+
+    <div class="page" style="filter:url(#grain)">
+      <div style="text-align:center;color:#C2856B;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:8px;">LAYER 1: + Paper Grain (feTurbulence)</div>
+      <div class="grid">
+        <div class="masthead"><h1>The Daily Calm</h1></div>
+        <div class="headline"><h2>Your Carbon Year</h2></div>
+        <div class="halftone-img"></div>
+        <div class="story-section"><h3>How You Stack Up</h3><p>Your annual carbon output of 8.4 tonnes sits modestly above the national average. Transportation dominates at 42%.</p></div>
+        <div class="footer">Calm — calm.app</div>
+      </div>
+    </div>
+
+    <div class="page" style="filter:url(#grain)">
+      <div style="text-align:center;color:#C2856B;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:8px;">LAYER 2: + Halftone Photos (feColorMatrix)</div>
+      <div class="grid">
+        <div class="masthead"><h1>The Daily Calm</h1></div>
+        <div class="headline"><h2>Your Carbon Year</h2></div>
+        <div class="halftone-img" style="filter:url(#halftone)"></div>
+        <div class="story-section"><h3>How You Stack Up</h3><p>Your annual carbon output of 8.4 tonnes sits modestly above the national average. Transportation dominates at 42%.</p></div>
+        <div class="footer">Calm — calm.app</div>
+      </div>
+    </div>
+
+    <div class="page" style="filter:url(#grain)">
+      <div style="text-align:center;color:#C2856B;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:8px;">LAYER 3: + Ink Bleed (feGaussianBlur on headlines)</div>
+      <div class="grid">
+        <div class="masthead"><h1 style="filter:url(#ink-bleed)">The Daily Calm</h1></div>
+        <div class="headline"><h2 style="filter:url(#ink-bleed)">Your Carbon Year</h2></div>
+        <div class="halftone-img" style="filter:url(#halftone)"></div>
+        <div class="story-section"><h3 style="filter:url(#ink-bleed)">How You Stack Up</h3><p>Your annual carbon output of 8.4 tonnes sits modestly above the national average. Transportation dominates at 42%.</p></div>
+        <div class="footer">Calm — calm.app</div>
+      </div>
+    </div>
+
+    <div class="page" style="filter:url(#grain);position:relative;">
+      <div style="text-align:center;color:#C2856B;font-size:11px;font-weight:700;letter-spacing:0.08em;padding:8px;">LAYER 4: + Fold Crease (gradient + shadow)</div>
+      <div class="grid">
+        <div class="masthead"><h1 style="filter:url(#ink-bleed)">The Daily Calm</h1></div>
+        <div class="headline"><h2 style="filter:url(#ink-bleed)">Your Carbon Year</h2></div>
+        <div class="halftone-img" style="filter:url(#halftone)"></div>
+        <div class="story-section"><h3 style="filter:url(#ink-bleed)">How You Stack Up</h3><p>Your annual carbon output of 8.4 tonnes sits modestly above the national average. Transportation dominates at 42%.</p></div>
+        <div class="footer">Calm — calm.app</div>
+      </div>
+      <div class="fold-overlay"><div class="fold-shadow"></div><div class="fold-bleed"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div id="sketch-tools">
+  <span style="opacity:0.6"></span>
+  <button onclick="document.querySelectorAll('.page').forEach(el=>el.style.maxWidth='500px')">500px</button>
+  <button onclick="document.querySelectorAll('.page').forEach(el=>el.style.maxWidth='800px')">800px</button>
+  <button onclick="document.querySelectorAll('.page').forEach(el=>el.style.maxWidth='1100px')">Full</button>
+</div>
+
+<script>
+function showVariant(id) {
+  document.querySelectorAll('.variant').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).style.display = 'block';
+  event.target.classList.add('active');
+}
+
+function updateFilters() {
+  const page = document.getElementById('page-a');
+  if (!page) return;
+  const filters = [];
+  if (document.getElementById('chk-grain').checked) filters.push('url(#grain)');
+  if (document.getElementById('chk-vignette').checked) filters.push('url(#vignette)');
+  page.style.filter = filters.join(' ') || 'none';
+
+  // Update halftone on image
+  const img = page.querySelector('.halftone-target');
+  if (img) {
+    img.style.filter = document.getElementById('chk-halftone').checked ? 'url(#halftone)' : 'none';
+  }
+
+  // Update ink bleed on headlines
+  const bleedEls = page.querySelectorAll('.bleed-target');
+  bleedEls.forEach(el => {
+    el.style.filter = document.getElementById('chk-ink').checked ? 'url(#ink-bleed)' : 'none';
+  });
+
+  // Update label badges
+  updateLabelBadges();
+}
+
+function updateFold() {
+  const fold = document.getElementById('fold-overlay');
+  if (fold) {
+    fold.style.display = document.getElementById('chk-fold').checked ? 'block' : 'none';
+  }
+  updateLabelBadges();
+}
+
+function updateLabelBadges() {
+  document.querySelectorAll('.layer-label').forEach(b => b.className = 'layer-label layer-off');
+  ['grain','halftone','ink','fold','vignette'].forEach(id => {
+    const chk = document.getElementById('chk-'+id);
+    if (chk && chk.checked) {
+      const labels = document.querySelectorAll('.layer-label');
+      const i = ['grain','halftone','ink','fold','vignette'].indexOf(id);
+      if (labels[i]) {
+        labels[i].textContent = 'on';
+        labels[i].className = 'layer-label layer-on';
+      } else {
+        labels[i].textContent = 'off';
+        labels[i].className = 'layer-label layer-off';
+      }
+    }
+  });
+}
+
+function enableAll() {
+  ['grain','halftone','ink','fold'].forEach(id => {
+    document.getElementById('chk-'+id).checked = true;
+  });
+  updateFilters(); updateFold();
+}
+function disableAll() {
+  ['grain','halftone','ink','fold','vignette'].forEach(id => {
+    document.getElementById('chk-'+id).checked = false;
+  });
+  updateFilters(); updateFold();
+}
+</script>
+</body>
+</html>

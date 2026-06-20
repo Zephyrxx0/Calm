@@ -13,3 +13,4 @@ Realistic vintage newspaper front page for Calm's carbon summary. 2000-era broad
 | # | Name | Design Question | Winner | Tags |
 |---|------|----------------|--------|------|
 | 001 | newspaper-layout | Does a 4-column broadsheet with vintage masthead feel like a real newspaper? | A | layout, masthead, newspaper, columns |
+| 002 | svg-filters | Which vintage filter layers are visually essential vs. distracting? | — | filters, svg, paper-texture, halftone |
