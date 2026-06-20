@@ -173,17 +173,6 @@ export function ContributionGraph() {
     [valueMap]
   );
 
-  const tooltipDataAttrs = useCallback(
-    (value: { date: string; count?: number } | null) => {
-      if (!value) return {};
-      const intensity = valueMap().get(value.date) ?? 0;
-      return {
-        "data-tooltip": `${format(parseISO(value.date), "MMM d, yyyy")}: ${CONSCIOUSNESS_LABELS[intensity]}`,
-      };
-    },
-    [valueMap]
-  );
-
   if (authLoading || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -271,7 +260,6 @@ export function ContributionGraph() {
               }
               classForValue={classForValue}
               titleForValue={titleForValue}
-              tooltipDataAttrs={tooltipDataAttrs}
               showWeekdayLabels={true}
               gutterSize={2}
               horizontal={true}

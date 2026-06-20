@@ -217,7 +217,7 @@ export default function SummaryPage({
         `/api/og`,
         window.location.origin,
       );
-      ogUrl.searchParams.set("snapshotId", sid);
+      ogUrl.searchParams.set("snapshotId", sid ?? "");
       ogUrl.searchParams.set("totalFootprint", footprintTons);
       ogUrl.searchParams.set("streakDays", streakDays);
       ogUrl.searchParams.set("topCategory", topCategory);
