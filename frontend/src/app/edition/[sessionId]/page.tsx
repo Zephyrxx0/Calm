@@ -63,6 +63,17 @@ export default function SummaryPage({
 
     async function fetchSummary() {
       try {
+        // Try sessionStorage first (data persisted from chat)
+        const cached = sessionStorage.getItem(`edition_${sessionId}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (!cancelled) {
+            setData(parsed);
+            setLoading(false);
+          }
+          return;
+        }
+
         const response = await fetch(`/api/edition/${sessionId}?country=US`);
         if (!response.ok) throw new Error("Failed to fetch summary data");
         const json = await response.json();

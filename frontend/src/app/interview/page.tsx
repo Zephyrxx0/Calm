@@ -41,6 +41,7 @@ export default function InterviewPage() {
         const data = await response.json();
         setSessionId(data.session_id);
         setUserId(data.user_id);
+        sessionStorage.setItem("userId", data.user_id);
 
         // Fetch the greeting message so the bot speaks first
         const greetRes = await fetch("/api/interview/message", {
