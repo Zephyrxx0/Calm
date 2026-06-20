@@ -223,9 +223,12 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           <header className="newspaper-masthead">
             <div className="newspaper-masthead-rule" />
             <h1 className="newspaper-masthead-title">
-              Calm Carbon Report
+              The Daily Calm
             </h1>
             <p className="newspaper-masthead-date">{dateString}</p>
+            {subtitle && (
+              <p className="newspaper-masthead-subtitle">{subtitle}</p>
+            )}
             <div className="newspaper-masthead-rule" />
           </header>
 
@@ -365,7 +368,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
             padding: 0.75in 0.5in;
             background: #fafaf8;
             color: #2c2c2a;
-            font-family: Georgia, "Times New Roman", Times, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             box-sizing: border-box;
           }
 
@@ -428,7 +431,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-masthead-title {
-            font-family: "Times New Roman", Georgia, serif;
+            font-family: var(--font-newspaper-headline), 'Playfair Display', 'Times New Roman', serif;
             font-size: 36px;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -439,7 +442,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-masthead-date {
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 12px;
             color: #6b6b68;
             letter-spacing: 0.1em;
@@ -455,6 +458,16 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
             margin: 0.1in 0;
           }
 
+          .newspaper-masthead-subtitle {
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
+            font-size: 13px;
+            color: #6b6b68;
+            text-align: center;
+            letter-spacing: 0.05em;
+            margin: 0 0 0.05in;
+            font-style: normal;
+          }
+
           /* ===========================================================
              Headline
              =========================================================== */
@@ -466,7 +479,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-headline-title {
-            font-family: "Times New Roman", Georgia, serif;
+            font-family: var(--font-newspaper-headline), 'Playfair Display', 'Times New Roman', serif;
             font-size: 28px;
             font-weight: 700;
             line-height: 1.2;
@@ -475,9 +488,9 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-headline-subtitle {
-            font-family: Georgia, serif;
-            font-size: 16px;
-            font-style: italic;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
+            font-size: 14px;
+            font-style: normal;
             color: #6b6b68;
             margin: 0 0 0.15in;
           }
@@ -493,7 +506,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-footprint-number {
-            font-family: "Times New Roman", Georgia, serif;
+            font-family: var(--font-newspaper-headline), 'Playfair Display', 'Times New Roman', serif;
             font-size: 64px;
             font-weight: 700;
             letter-spacing: -0.02em;
@@ -502,7 +515,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-footprint-unit {
-            font-family: Georgia, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 14px;
             color: #6b6b68;
             letter-spacing: 0.05em;
@@ -513,7 +526,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
              Section labels
              =========================================================== */
           .newspaper-section-label {
-            font-family: "Times New Roman", Georgia, serif;
+            font-family: var(--font-newspaper-headline), 'Playfair Display', 'Times New Roman', serif;
             font-size: 15px;
             font-weight: 700;
             text-transform: uppercase;
@@ -534,14 +547,14 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           .newspaper-category-table {
             width: 100%;
             border-collapse: collapse;
-            font-family: Georgia, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 11px;
             line-height: 1.4;
           }
 
           .newspaper-category-table th {
             text-align: left;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -581,14 +594,14 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-streak-value {
-            font-family: "Times New Roman", Georgia, serif;
+            font-family: var(--font-newspaper-headline), 'Playfair Display', 'Times New Roman', serif;
             font-size: 24px;
             font-weight: 700;
             color: #1a1a1a;
           }
 
           .newspaper-streak-label {
-            font-family: Georgia, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 10px;
             color: #6b6b68;
             text-transform: uppercase;
@@ -611,7 +624,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-quote p {
-            font-family: Georgia, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 12px;
             line-height: 1.5;
             font-style: italic;
@@ -621,7 +634,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
 
           .newspaper-quote-source {
             display: block;
-            font-family: Georgia, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 10px;
             color: #6b6b68;
             font-style: normal;
@@ -645,7 +658,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           .newspaper-footer-text {
-            font-family: Georgia, serif;
+            font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             font-size: 10px;
             color: #9a9a97;
             letter-spacing: 0.03em;

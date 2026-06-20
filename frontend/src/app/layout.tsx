@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
+import { Instrument_Serif, Geist, Geist_Mono, Playfair_Display, PT_Serif } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
@@ -24,6 +24,20 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  weight: "700",
+  variable: "--font-newspaper-headline",
+  display: "block",
+});
+
+const ptSerif = PT_Serif({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-newspaper-body",
+  display: "block",
+});
+
 export const metadata: Metadata = {
   title: "Calm — Your Carbon Footprint",
   description:
@@ -38,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${instrumentSerif.variable} ${geist.variable} ${geistMono.variable} ${playfairDisplay.variable} ${ptSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         <AuthProvider>
