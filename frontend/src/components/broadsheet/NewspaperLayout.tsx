@@ -214,6 +214,37 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           </div>
         )}
 
+        {/* ---------- SVG filter definitions ---------- */}
+        <svg width="0" height="0" style={{position:'absolute'}} aria-hidden="true">
+          <defs>
+            <filter id="paper-grain" filterUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="4" seed="3" result="noise" />
+              <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0" result="grain" />
+              <feBlend in="SourceGraphic" in2="grain" mode="multiply" />
+            </filter>
+            <filter id="halftone-img">
+              <feColorMatrix type="matrix" values="0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0.33 0.33 0.33 0 0  0 0 0 1 0" result="grayscale" />
+              <feComponentTransfer in="grayscale">
+                <feFuncR type="linear" slope="1.8" intercept="-0.15" />
+                <feFuncG type="linear" slope="1.8" intercept="-0.15" />
+                <feFuncB type="linear" slope="1.8" intercept="-0.15" />
+              </feComponentTransfer>
+            </filter>
+            <filter id="ink-bleed" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.4" result="blur" />
+              <feComponentTransfer in="blur" result="sharpened">
+                <feFuncR type="linear" slope="2.5" intercept="-0.3" />
+                <feFuncG type="linear" slope="2.5" intercept="-0.3" />
+                <feFuncB type="linear" slope="2.5" intercept="-0.3" />
+              </feComponentTransfer>
+            </filter>
+            <filter id="edge-wear" x="-20%" y="-20%" width="140%" height="140%">
+              <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="5" result="turbulence" />
+              <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="3" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+          </defs>
+        </svg>
+
         {/* ---------- Broadsheet container ---------- */}
         <div
           ref={containerRef}
@@ -249,6 +280,9 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
               </span>
             </div>
           </section>
+
+          {/* Horizontal fold crease */}
+          <div className="newspaper-fold" aria-hidden="true" />
 
           {/* Category breakdown — flows across columns */}
           {categoryBreakdown.length > 0 && (
@@ -366,10 +400,12 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
             max-width: 17in;
             margin: 0 auto;
             padding: 0.75in 0.5in;
-            background: #fafaf8;
+            background: linear-gradient(180deg, #FAFAF8 0%, #F5F0E8 100%);
             color: #2c2c2a;
             font-family: var(--font-newspaper-body), 'PT Serif', Georgia, serif;
             box-sizing: border-box;
+            position: relative;
+            filter: url(#paper-grain) url(#edge-wear);
           }
 
           /* ===========================================================
@@ -377,7 +413,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
              =========================================================== */
           @media screen {
             .newspaper-broadsheet {
-              column-count: 4;
+              column-count: 5;
               column-gap: 0.5in;
               column-rule: 1px solid #d4d4cd;
             }
@@ -402,7 +438,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
               height: 11in;
               padding: 0.5in 0.4in;
               margin: 0;
-              column-count: 4;
+              column-count: 5;
               column-gap: 0.5in;
               column-rule: 1px solid #d4d4cd;
               max-width: none;
@@ -412,12 +448,24 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           /* ===========================================================
              Fallback for browsers without column support
              =========================================================== */
-          @supports not (columns: 4) {
+          @supports not (columns: 5) {
             .newspaper-broadsheet {
               column-count: auto;
               display: flex;
               flex-direction: column;
               gap: 24px;
+            }
+          }
+
+          @media screen and (max-width: 1200px) {
+            .newspaper-broadsheet {
+              column-count: 3;
+            }
+          }
+
+          @media screen and (max-width: 768px) {
+            .newspaper-broadsheet {
+              column-count: 1;
             }
           }
 
@@ -439,6 +487,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
             margin: 0.15in 0 0.1in;
             color: #1a1a1a;
             break-after: avoid;
+            filter: url(#ink-bleed);
           }
 
           .newspaper-masthead-date {
@@ -485,6 +534,7 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
             line-height: 1.2;
             margin: 0 0 0.1in;
             color: #1a1a1a;
+            filter: url(#ink-bleed);
           }
 
           .newspaper-headline-subtitle {
@@ -665,6 +715,37 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
           }
 
           /* ===========================================================
+             Fold crease
+             =========================================================== */
+          .newspaper-fold {
+            column-span: all;
+            height: 0;
+            margin: 0.3in 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            pointer-events: none;
+          }
+
+          /* ===========================================================
+             Vignette overlay
+             =========================================================== */
+          .newspaper-broadsheet::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.03) 100%);
+            z-index: 1;
+          }
+
+          /* ===========================================================
+             Halftone on images
+             =========================================================== */
+          .newspaper-broadsheet img {
+            filter: url(#halftone-img);
+          }
+
+          /* ===========================================================
              Utility — banners & overlays
              =========================================================== */
           .newspaper-broadsheet-wrapper {
@@ -728,6 +809,14 @@ export const NewspaperLayout = forwardRef<NewspaperLayoutHandle, NewspaperLayout
             .newspaper-export-loading-overlay,
             .newspaper-column-warning,
             .newspaper-export-error {
+              display: none !important;
+            }
+
+            .newspaper-fold {
+              display: none !important;
+            }
+
+            .newspaper-broadsheet::after {
               display: none !important;
             }
           }
