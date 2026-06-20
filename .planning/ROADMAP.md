@@ -88,6 +88,20 @@ Plans:
 
 - [x] TBD (run /gsd-plan-phase 4 to break down) (completed 2026-06-20)
 
+### Phase 04.1: edition edits (INSERTED)
+
+**Goal:** Transform the broadsheet edition into a realistic 2000-era vintage newspaper front page with 7-layer print simulation (paper grain, halftone, ink bleed, fold crease, edge wear, vignette, cream-to-ivory gradient) — all as inline SVG/CSS filters captured natively by html-to-image at 17×11 landscape. Single NewspaperLayout component serves three routes: edition, daily, and share.
+**Requirements**: [D-45, D-46, D-47, D-48, D-49, D-50, D-51, D-52, D-53, D-54, D-55, D-56, D-57]
+**Depends on:** Phase 4
+**Plans:** 4 plans
+
+Plans:
+
+- [ ] 04.1-01-PLAN.md — Font Setup & Masthead: Playfair Display + PT Serif via next/font/google, masthead "The Daily Calm"
+- [ ] 04.1-02-PLAN.md — SVG Filters & Visual Effects: 7-layer vintage print stack, 5-column layout, paper grain, ink bleed, fold crease, edge wear, vignette
+- [ ] 04.1-03-PLAN.md — Daily & Share Integration: Newspaper view toggle on daily page, newspaper rendering on share page
+- [ ] 04.1-04-PLAN.md — Tests: NewspaperLayout component tests, update BroadsheetExport/DailyForm/SharePage tests
+
 ## Phase 5: Refinement & Growth
 
 *   **Objective:** Broaden the platform's capabilities.
