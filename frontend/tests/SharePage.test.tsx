@@ -49,4 +49,10 @@ describe("Share Page", () => {
   it.todo("renders read-only snapshot view");
   it.todo("displays call-to-action for new visitors");
   it.todo("fetches snapshot data by UUID");
+
+  it("supports newspaper view mode via NewspaperLayout import", async () => {
+    const mod = await import("@/app/share/[snapshotId]/page");
+    const source = mod.default.toString();
+    expect(source).toContain("newspaper");
+  });
 });

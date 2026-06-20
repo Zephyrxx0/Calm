@@ -51,7 +51,7 @@ function mockMultiColumn(supported: boolean) {
   globalThis.CSS = {
     ...originalCSS,
     supports: vi.fn((prop: string, value: string) => {
-      if (prop === "columns" && value === "4") return supported;
+      if (prop === "columns") return supported;
       return originalCSS.supports(prop, value);
     }),
   };
@@ -98,10 +98,10 @@ describe("NewspaperLayout", () => {
 
   // ---- Rendering ----
 
-  it("renders broadsheet masthead 'Calm Carbon Report'", () => {
+  it("renders broadsheet masthead 'The Daily Calm'", () => {
     const props = makeDefaultProps();
     render(<NewspaperLayout {...props} />);
-    expect(screen.getByText("Calm Carbon Report")).toBeTruthy();
+    expect(screen.getByText("The Daily Calm")).toBeTruthy();
   });
 
   it("displays the user footprint in tonnes", () => {
@@ -183,7 +183,7 @@ describe("NewspaperLayout", () => {
 
     expect(styleTexts).toContain("width: 17in");
     expect(styleTexts).toContain("height: 11in");
-    expect(styleTexts).toContain("column-count: 4");
+    expect(styleTexts).toContain("column-count: 5");
   });
 
   // ---- Export functionality ----
@@ -303,7 +303,7 @@ describe("NewspaperLayout — Ref Handle", () => {
     render(<NewspaperLayout {...props} />);
 
     // Masthead
-    expect(screen.getByText("Calm Carbon Report")).toBeTruthy();
+    expect(screen.getByText("The Daily Calm")).toBeTruthy();
     // Footprint
     expect(screen.getByText("5.2")).toBeTruthy();
     // Categories
@@ -434,7 +434,7 @@ describe("Broadsheet Export — Firebase User Integration", () => {
     render(<NewspaperLayout {...props} />);
 
     // Should render without crashing — streak section skipped
-    expect(screen.getByText("Calm Carbon Report")).toBeTruthy();
+    expect(screen.getByText("The Daily Calm")).toBeTruthy();
     expect(screen.queryByText("Your Carbon Streak")).toBeNull();
   });
 });
