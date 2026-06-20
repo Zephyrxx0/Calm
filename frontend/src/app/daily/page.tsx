@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthButton } from "@/components/auth/AuthButton";
 import { DailyForm } from "@/components/daily/DailyForm";
 import { ContributionGraph } from "@/components/daily/ContributionGraph";
+import NewspaperLayout from "@/components/broadsheet/NewspaperLayout";
 import { DoodlePebbles } from "@/components/OrganicDoodles";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowLeft } from "lucide-react";
@@ -14,10 +15,18 @@ function Grain() {
   return <div className="grain" aria-hidden="true" />;
 }
 
+type ViewMode = "tracking" | "newspaper";
+
 export default function DailyPage() {
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [graphKey, setGraphKey] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>("tracking");
+  const [streakData, setStreakData] = useState<{
+    currentStreak: number;
+    longestStreak: number;
+    totalDays: number;
+  } | null>(null);
 
   const handleEntryCreated = useCallback(() => {
     setGraphKey((k) => k + 1);
@@ -26,6 +35,32 @@ export default function DailyPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    async function fetchStreak() {
+      try {
+        const token = await user!.getIdToken();
+        const res = await fetch("/api/daily/streak", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) {
+          setStreakData({
+            currentStreak: json.current_streak ?? 0,
+            longestStreak: json.longest_streak ?? 0,
+            totalDays: json.total_days ?? 0,
+          });
+        }
+      } catch {
+        // Streak data optional — fail silently
+      }
+    }
+    fetchStreak();
+    return () => { cancelled = true; };
+  }, [user]);
 
   // Auth guard: show loading while auth initializes
   if (authLoading || !mounted) {
@@ -83,53 +118,91 @@ export default function DailyPage() {
               <ArrowLeft className="h-3 w-3 inline mr-1" />
               Back to Interview
             </Link>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setViewMode("tracking")}
+                className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                  viewMode === "tracking"
+                    ? "bg-accent text-white"
+                    : "bg-surface text-muted hover:text-foreground"
+                }`}
+              >
+                Tracking
+              </button>
+              <button
+                onClick={() => setViewMode("newspaper")}
+                className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                  viewMode === "newspaper"
+                    ? "bg-accent text-white"
+                    : "bg-surface text-muted hover:text-foreground"
+                }`}
+              >
+                View as Newspaper
+              </button>
+            </div>
             <AuthButton />
           </div>
         </div>
       </header>
 
       {/* Main Content — responsive layout */}
-      <div className="flex-1 relative z-10">
-        <div className="max-w-6xl mx-auto px-6 py-8 lg:py-12">
-          {/* Mobile: title visible here */}
-          <h1 className="text-xl font-serif text-foreground mb-8 sm:hidden">
-            Daily Carbon Tracking
-          </h1>
+      {viewMode === "tracking" && (
+        <div className="flex-1 relative z-10">
+          <div className="max-w-6xl mx-auto px-6 py-8 lg:py-12">
+            {/* Mobile: title visible here */}
+            <h1 className="text-xl font-serif text-foreground mb-8 sm:hidden">
+              Daily Carbon Tracking
+            </h1>
 
-          {/* Desktop: side-by-side. Mobile: stacked */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
-            {/* Left/Top: Daily Form */}
-            <section>
-              <div className="border border-border/50 bg-surface rounded-xl p-6 lg:p-8">
-                <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
-                  Track Today
-                </h2>
-                <DailyForm onEntryCreated={handleEntryCreated} />
-              </div>
-            </section>
+            {/* Desktop: side-by-side. Mobile: stacked */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
+              {/* Left/Top: Daily Form */}
+              <section>
+                <div className="border border-border/50 bg-surface rounded-xl p-6 lg:p-8">
+                  <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
+                    Track Today
+                  </h2>
+                  <DailyForm onEntryCreated={handleEntryCreated} />
+                </div>
+              </section>
 
-            {/* Right/Bottom: Contribution Graph */}
-            <section>
-              <div className="border border-border/50 bg-surface rounded-xl p-6 lg:p-8">
-                <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
-                  Your Carbon Story
-                </h2>
-                <ContributionGraph key={graphKey} />
-              </div>
-            </section>
-          </div>
+              {/* Right/Bottom: Contribution Graph */}
+              <section>
+                <div className="border border-border/50 bg-surface rounded-xl p-6 lg:p-8">
+                  <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
+                    Your Carbon Story
+                  </h2>
+                  <ContributionGraph key={graphKey} />
+                </div>
+              </section>
+            </div>
 
-          {/* Footer link */}
-          <div className="mt-12 text-center">
-            <Link
-              href="/share"
-              className="text-xs font-sans text-muted hover:text-accent transition-colors"
-            >
-              Generate Report →
-            </Link>
+            {/* Footer link */}
+            <div className="mt-12 text-center">
+              <Link
+                href="/share"
+                className="text-xs font-sans text-muted hover:text-accent transition-colors"
+              >
+                Generate Report →
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Newspaper view */}
+      {viewMode === "newspaper" && (
+        <div className="flex-1 overflow-auto bg-[#fafaf8]">
+          <NewspaperLayout
+            title="Your Daily Carbon Story"
+            subtitle="A snapshot of your tracking progress"
+            footprint={0}
+            categoryBreakdown={[]}
+            streakData={streakData}
+            pullQuotes={undefined}
+          />
+        </div>
+      )}
     </main>
   );
 }
