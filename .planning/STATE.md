@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 04
-status: Executing Phase 04
-last_updated: "2026-06-20T14:51:05Z"
+status: Phase 04 Complete
+last_updated: "2026-06-20T15:00:25Z"
 last_activity: 2026-06-20
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 14
-  percent: 93
+  completed_plans: 15
+  percent: 80
 ---
 
 # Project State
 
 This file tracks the current state of the project.
 
-**Current Phase:** 04
-**Next Step:** Plan 04 (Broadsheet Export Layout)
+**Current Phase:** 04 (Complete)
+**Next Step:** Run /gsd-plan-phase 5 to plan Phase 5: Refinement & Growth
 **Last Activity:** 2026-06-20
 **Context Gathered:** 2026-06-19
 
@@ -30,9 +30,18 @@ This file tracks the current state of the project.
 - Phase 4.1 inserted: Social & Sharing (URGENT)
 - Phase 4.1 renumbered to Phase 4; old Phase 4 renumbered to Phase 5
 
+## Decisions
+
+- Used CSS Multi-column (columns: 4) for broadsheet layout with @supports fallback
+- forwardRef+useImperativeHandle for imperative export API on React components
+- Optional Authorization header in POST /snapshot for anonymous + authenticated compatibility
+- Co-located streak computation in snapshot.py to avoid circular dependency
+- Geist font in OG cards per UI-SPEC rather than serif
+
 ## Performance Metrics
 
 | Phase | Plan | Duration | Notes |
 |-------|------|----------|-------|
 | Phase 04 P02 | 3 min | 3 tasks | 4 files |
 | Phase 04 P03 | 6 min | 4 tasks | 11 files |
+| Phase 04 P04 | 7 min | 5 tasks | 6 files |
