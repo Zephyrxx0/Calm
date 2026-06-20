@@ -3,18 +3,22 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
+/**
+ * GET /api/og — Universal social share card (1200×630)
+ *
+ * Query parameters:
+ *   snapshotId      — UUID of the shared snapshot
+ *   totalFootprint  — Carbon footprint in tonnes (e.g. "4.2")
+ *   streakDays      — Current streak day count
+ *   topCategory     — Name of highest-impact category
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const total = searchParams.get("total") || "0";
-  const breakdown = searchParams.get("breakdown") || "";
+  const totalFootprint = searchParams.get("totalFootprint") || "";
+  const streakDays = searchParams.get("streakDays") || "0";
+  const topCategory = searchParams.get("topCategory") || "";
 
-  // Parse breakdown categories for display
-  const categories = breakdown
-    ? breakdown.split(",").map((item) => {
-        const [name, value] = item.split(":");
-        return { name, value };
-      })
-    : [];
+  const hasData = totalFootprint !== "";
 
   return new ImageResponse(
     (
@@ -22,126 +26,209 @@ export async function GET(request: NextRequest) {
         style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "space-between",
           width: "100%",
           height: "100%",
-          backgroundColor: "#FAFAF8",
-          padding: "60px",
-          fontFamily: "system-ui, sans-serif",
+          backgroundColor: "#f4f3ef",
+          padding: "56px 64px",
+          fontFamily: "Geist, system-ui, sans-serif",
+          position: "relative",
         }}
       >
-        {/* Brand */}
+        {/* Subtle texture overlay */}
         <div
           style={{
-            display: "flex",
-            fontSize: "18px",
-            color: "#9A9A97",
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            marginBottom: "32px",
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "radial-gradient(circle at 25% 25%, rgba(194,133,107,0.04) 0%, transparent 50%)",
+            pointerEvents: "none",
           }}
-        >
-          Calm
-        </div>
+        />
 
-        {/* Total */}
+        {/* Top row: branding */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
+            justifyContent: "flex-start",
             alignItems: "center",
-            marginBottom: "40px",
           }}
         >
           <div
             style={{
               display: "flex",
-              fontSize: "72px",
-              fontWeight: "600",
-              color: "#2C2C2A",
-              letterSpacing: "-0.02em",
+              fontSize: "22px",
+              fontWeight: 600,
+              color: "#1a1a1a",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
             }}
           >
-            {total}t
-          </div>
-          <div
-            style={{
-              display: "flex",
-              fontSize: "20px",
-              color: "#6B6B68",
-              marginTop: "8px",
-            }}
-          >
-            CO₂e per year
+            Calm
           </div>
         </div>
 
-        {/* Categories */}
-        {categories.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              gap: "24px",
-              flexWrap: "wrap",
-              justifyContent: "center",
-            }}
-          >
-            {categories.slice(0, 4).map((cat) => (
+        {/* Middle: main content */}
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {hasData ? (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "24px",
+              }}
+            >
+              {/* Footprint number */}
               <div
-                key={cat.name}
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  padding: "12px 20px",
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: "12px",
-                  border: "1px solid #E5E5E2",
+                  gap: "6px",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    fontSize: "14px",
-                    color: "#6B6B68",
-                    textTransform: "capitalize",
+                    fontSize: "80px",
+                    fontWeight: 700,
+                    color: "#1a1a1a",
+                    letterSpacing: "-0.03em",
+                    lineHeight: 1,
                   }}
                 >
-                  {cat.name}
+                  {totalFootprint}
+                  <span
+                    style={{
+                      fontSize: "28px",
+                      fontWeight: 500,
+                      color: "#6b6b68",
+                      marginLeft: "6px",
+                      alignSelf: "flex-end",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    t
+                  </span>
                 </div>
                 <div
                   style={{
                     display: "flex",
-                    fontSize: "20px",
-                    fontWeight: "600",
-                    color: "#7A8B6F",
+                    fontSize: "22px",
+                    color: "#6b6b68",
+                    fontWeight: 400,
                   }}
                 >
-                  {cat.value}t
+                  tonnes CO₂ / year
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Footer */}
+              {/* Top category pill */}
+              {topCategory && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 20px",
+                    backgroundColor: "rgba(194,133,107,0.12)",
+                    borderRadius: "100px",
+                    border: "1px solid rgba(194,133,107,0.25)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      fontSize: "15px",
+                      color: "#c2856b",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {topCategory} is your top category
+                  </div>
+                </div>
+              )}
+
+              {/* Streak */}
+              {streakDays !== "0" && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "20px",
+                    color: "#c2856b",
+                    fontWeight: 600,
+                  }}
+                >
+                  <span>🔥 {streakDays} day streak</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Fallback — no data */
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: "42px",
+                  fontWeight: 600,
+                  color: "#1a1a1a",
+                  textAlign: "center",
+                }}
+              >
+                Start Your Carbon Journey
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: "20px",
+                  color: "#6b6b68",
+                  textAlign: "center",
+                }}
+              >
+                Track your footprint and build your streak.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom: footer */}
         <div
           style={{
             display: "flex",
-            position: "absolute",
-            bottom: "40px",
-            fontSize: "14px",
-            color: "#9A9A97",
+            justifyContent: "flex-end",
+            fontSize: "15px",
+            color: "#9a9a97",
+            fontWeight: 400,
           }}
         >
-          calm.app — Know your footprint
+          Track your carbon footprint at calm.app
         </div>
       </div>
     ),
     {
       width: 1200,
       height: 630,
-    }
+      headers: {
+        "Cache-Control":
+          "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    },
   );
 }
