@@ -93,7 +93,7 @@ Plans:
 **Goal:** Transform the broadsheet edition into a realistic 2000-era vintage newspaper front page with 7-layer print simulation (paper grain, halftone, ink bleed, fold crease, edge wear, vignette, cream-to-ivory gradient) — all as inline SVG/CSS filters captured natively by html-to-image at 17×11 landscape. Single NewspaperLayout component serves three routes: edition, daily, and share.
 **Requirements**: [D-45, D-46, D-47, D-48, D-49, D-50, D-51, D-52, D-53, D-54, D-55, D-56, D-57]
 **Depends on:** Phase 4
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 **Wave 1**
 
@@ -106,7 +106,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 04.1-04-PLAN.md — Tests: NewspaperLayout component tests, update BroadsheetExport/DailyForm/SharePage tests
+- [x] 04.1-04-PLAN.md — Tests: NewspaperLayout component tests, update BroadsheetExport/DailyForm/SharePage tests
 
 ## Phase 5: Refinement & Growth
 
