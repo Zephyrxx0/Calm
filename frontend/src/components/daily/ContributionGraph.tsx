@@ -82,9 +82,9 @@ function DayCell({
       title={title}
       className={`${sizeClass} transition-all duration-150 cursor-default hover:ring-1 hover:ring-accent/50`}
       style={{
-        backgroundColor: isFutureDate ? "transparent" : INTENSITY_COLORS[Math.min(intensity, 4)],
-        opacity: isFutureDate ? 0.15 : 1,
-        outline: isFutureDate ? "none" : "1px solid rgba(26,26,26,0.07)",
+        backgroundColor: isFutureDate ? "#e8e6df" : INTENSITY_COLORS[Math.min(intensity, 4)],
+        opacity: isFutureDate ? 0.3 : 1,
+        outline: isFutureDate ? "1px solid rgba(26,26,26,0.03)" : "1px solid rgba(26,26,26,0.07)",
         outlineOffset: "-1px",
       }}
     />
@@ -270,9 +270,9 @@ function YearlyView({
       </div>
 
       {/* Grid: 7 rows (days) × N columns (weeks) */}
-      <div className="flex justify-start pb-1 overflow-x-auto">
+      <div className="w-full pb-1">
         <div
-          className="grid gap-[3px]"
+          className="grid gap-1 w-full"
           style={{
             gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
             gridTemplateRows: "repeat(7, auto)",
@@ -285,12 +285,12 @@ function YearlyView({
             return days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
               return (
-                <div key={dateStr} className="w-5 h-5">
+                <div key={dateStr} className="w-full">
                   <DayCell
                     date={day}
                     intensity={map.get(dateStr) ?? 0}
                     isFutureDate={isFuture(day)}
-                    size="sm"
+                    size="md"
                   />
                 </div>
               );
