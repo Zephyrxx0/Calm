@@ -66,16 +66,14 @@ function DayCell({
   date,
   intensity,
   isFutureDate,
-  size = "md",
 }: {
   date: Date;
   intensity: number;
   isFutureDate: boolean;
-  size?: "sm" | "md";
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  const sizeClass = size === "sm" ? "w-5 h-5 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
+  const sizeClass = "w-10 h-10 sm:w-11 sm:h-11 rounded-[4px]";
 
   return (
     <div
@@ -171,9 +169,9 @@ function MonthlyView({
 
       {/* Day labels */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-7 gap-1 w-full max-w-[160px] mb-1.5">
+        <div className="grid grid-cols-7 gap-1.5 mb-2">
           {DAY_LABELS.map((d) => (
-            <div key={d} className="text-center text-[9px] tracking-widest uppercase text-muted/60 pb-0.5">
+            <div key={d} className="text-center text-[10px] tracking-widest uppercase text-muted/60 pb-1">
               {d.charAt(0)}
             </div>
           ))}
@@ -182,17 +180,16 @@ function MonthlyView({
 
       {/* Day cells */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-7 gap-1 w-full max-w-[160px]">
+        <div className="grid grid-cols-7 gap-1.5">
           {emptyCells.map((_, i) => <div key={`e-${i}`} />)}
           {days.map((day) => {
             const dateStr = format(day, "yyyy-MM-dd");
             return (
-              <div key={dateStr} className="w-full">
+              <div key={dateStr}>
                 <DayCell
                   date={day}
                   intensity={map.get(dateStr) ?? 0}
                   isFutureDate={isFuture(day)}
-                  size="md"
                 />
               </div>
             );
@@ -276,9 +273,9 @@ function YearlyView({
       </div>
 
       {/* Grid: 7 rows (days) × N columns (weeks) */}
-      <div className="w-full pb-1">
+      <div className="w-full pb-2 overflow-x-auto">
         <div
-          className="grid gap-1 w-full"
+          className="grid gap-1.5 w-max mx-auto"
           style={{
             gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
             gridTemplateRows: "repeat(7, auto)",
@@ -291,12 +288,11 @@ function YearlyView({
             return days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
               return (
-                <div key={dateStr} className="w-full">
+                <div key={dateStr}>
                   <DayCell
                     date={day}
                     intensity={map.get(dateStr) ?? 0}
                     isFutureDate={isFuture(day)}
-                    size="md"
                   />
                 </div>
               );
