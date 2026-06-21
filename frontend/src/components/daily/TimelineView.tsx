@@ -270,20 +270,20 @@ function ActivityTimelineItem({ log }: { log: ActivityLog }) {
   return (
     <TimelineItem>
       {/* Vertical connecting line */}
-      <TimelineConnector className="bg-foreground/30" />
+      <TimelineConnector className="bg-foreground/25" />
 
-      {/* Dot with activity icon */}
+      {/* Dot — light bg, dark border, dark icon */}
       <TimelineDot
-        className="border-foreground bg-foreground shadow-sm"
+        className="border-2 border-foreground/70 bg-background shadow-sm"
         style={{ "--timeline-dot-size": "2rem" } as React.CSSProperties}
       >
         {log.activity_type === "quick_log" ? (
           <TransportIcon
             value={String(log.metadata.transport ?? "")}
-            className="w-4 h-4 text-background"
+            className="w-4 h-4 text-foreground"
           />
         ) : (
-          <Icon className="w-4 h-4 text-background" />
+          <Icon className="w-4 h-4 text-foreground" />
         )}
       </TimelineDot>
 
@@ -374,6 +374,7 @@ export function TimelineView() {
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const fetchingRef = useRef(false);
+  const seenIdsRef = useRef<Set<number>>(new Set());
 
   const fetchPage = useCallback(
     async (cursor?: number) => {
@@ -394,10 +395,12 @@ export function TimelineView() {
 
         const data: TimelinePage = await res.json();
         setAllItems((prev) => {
-          const newItems = data.items.filter(
-            (item) => !prev.some((p) => p.id === item.id)
-          );
-          return [...prev, ...newItems];
+          const fresh = data.items.filter((item) => {
+            if (seenIdsRef.current.has(item.id)) return false;
+            seenIdsRef.current.add(item.id);
+            return true;
+          });
+          return [...prev, ...fresh];
         });
         setNextCursor(data.next_cursor);
       } catch {
