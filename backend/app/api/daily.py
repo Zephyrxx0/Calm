@@ -79,6 +79,11 @@ class ActivityLogResponse(BaseModel):
     logged_at: datetime
 
 
+class TimelinePageResponse(BaseModel):
+    items: List[ActivityLogResponse]
+    next_cursor: Optional[int]  # ID to pass as before_id for next page; None = end
+
+
 class ContributionData(BaseModel):
     date: date
     carbon_consciousness: int
@@ -429,22 +434,36 @@ async def get_streak_data(
     )
 
 
-@router.get("/logs", response_model=List[ActivityLogResponse])
+@router.get("/logs", response_model=TimelinePageResponse)
 async def get_activity_logs(
     firebase_uid: str = Depends(_require_uid),
     db: AsyncSession = Depends(get_session),
-    limit: int = 50,
-) -> List[ActivityLogResponse]:
-    """Return recent individual activity logs for the timeline view."""
-    result = await db.execute(
+    before_id: Optional[int] = None,
+    limit: int = 20,
+) -> TimelinePageResponse:
+    """Return paginated individual activity logs for the timeline view.
+
+    Cursor-based pagination: pass `before_id` to fetch items older than that
+    activity log ID. Returns `next_cursor=None` when no more items exist.
+    """
+    limit = max(1, min(limit, 50))  # clamp to [1, 50]
+
+    query = (
         select(ActivityLog)
         .where(ActivityLog.firebase_uid == firebase_uid)
-        .order_by(ActivityLog.logged_at.desc())
-        .limit(limit)
+        .order_by(ActivityLog.id.desc())
     )
-    logs = result.scalars().all()
+    if before_id is not None:
+        query = query.where(ActivityLog.id < before_id)
 
-    return [
+    # Fetch one extra to determine if there's a next page
+    result = await db.execute(query.limit(limit + 1))
+    rows = result.scalars().all()
+
+    has_more = len(rows) > limit
+    rows = rows[:limit]
+
+    items = [
         ActivityLogResponse(
             id=log.id,
             activity_type=log.activity_type,
@@ -452,5 +471,10 @@ async def get_activity_logs(
             metadata=log.activity_metadata,
             logged_at=log.logged_at,
         )
-        for log in logs
+        for log in rows
     ]
+
+    return TimelinePageResponse(
+        items=items,
+        next_cursor=rows[-1].id if has_more else None,
+    )

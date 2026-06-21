@@ -6,6 +6,7 @@ import { AuthButton } from "@/components/auth/AuthButton";
 import { DailyForm } from "@/components/daily/DailyForm";
 import { ContributionGraph } from "@/components/daily/ContributionGraph";
 import { ActionDrawer } from "@/components/daily/ActionDrawer";
+import { TimelineView } from "@/components/daily/TimelineView";
 import NewspaperLayout from "@/components/broadsheet/NewspaperLayout";
 import { DoodlePebbles } from "@/components/OrganicDoodles";
 import { Spinner } from "@/components/ui/spinner";
@@ -152,6 +153,11 @@ export default function DailyPage() {
           {/* Hero heatmap */}
           <div className="max-w-7xl mx-auto px-6 pt-10 pb-4">
             <ContributionGraph key={graphKey} />
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="max-w-2xl mx-auto px-6 pt-8 pb-4">
+            <TimelineView />
           </div>
 
           {/* Footer link */}
