@@ -31,7 +31,7 @@ async def test_verify_invalid_token():
         with pytest.raises(HTTPException) as exc_info:
             await verify_firebase_token("bad-token")
         assert exc_info.value.status_code == 401
-        assert exc_info.value.detail == "Invalid token"
+        assert exc_info.value.detail == "Invalid token: Token is invalid"
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test_verify_expired_token():
         with pytest.raises(HTTPException) as exc_info:
             await verify_firebase_token("expired-token")
         assert exc_info.value.status_code == 401
-        assert exc_info.value.detail == "Invalid token"
+        assert exc_info.value.detail == "Token has expired"
 
 
 @pytest.mark.asyncio
@@ -55,4 +55,5 @@ async def test_verify_malformed_token():
         with pytest.raises(HTTPException) as exc_info:
             await verify_firebase_token("malformed-token")
         assert exc_info.value.status_code == 401
-        assert exc_info.value.detail == "Invalid token"
+        assert exc_info.value.detail == "Token verification failed"
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Timeline,
@@ -50,10 +50,6 @@ const TRANSPORT_LABELS: Record<string, string> = {
   flight: "Flight",
   none: "Stayed Home",
 };
-function transportLabel(v: string) {
-  return TRANSPORT_LABELS[v] ?? v;
-}
-
 const MEAL_LABELS: Record<string, string> = {
   vegan: "Vegan",
   vegetarian: "Vegetarian",
@@ -61,20 +57,12 @@ const MEAL_LABELS: Record<string, string> = {
   balanced: "Balanced",
   red_meat: "Red Meat",
 };
-function mealLabel(v: string) {
-  return MEAL_LABELS[v] ?? v;
-}
-
 const ENERGY_LABELS: Record<string, string> = {
   low: "Low Usage",
   moderate: "Moderate",
   high: "High Usage",
   renewable: "Renewable",
 };
-function energyLabel(v: string) {
-  return ENERGY_LABELS[v] ?? v;
-}
-
 const SCORE_LABELS: Record<number, string> = {
   1: "Not conscious",
   2: "Slightly",
@@ -83,280 +71,261 @@ const SCORE_LABELS: Record<number, string> = {
   5: "Extremely conscious",
 };
 
-// ─── Transport icon picker ─────────────────────────────────────────────────
+function tlabel(v: string, map: Record<string, string>) {
+  return map[v] ?? v;
+}
 
-function TransportIcon({ value, className }: { value?: string; className?: string }) {
-  if (value === "bicycle" || value === "walking") return <Bike className={className} />;
-  if (value === "car" || value === "suv" || value === "flight") return <Car className={className} />;
-  return <Zap className={className} />;
+// ─── Activity helpers ───────────────────────────────────────────────────────
+
+function activityIcon(log: ActivityLog, className = "w-3.5 h-3.5") {
+  if (log.activity_type === "quick_log") {
+    const t = String(log.metadata.transport ?? "");
+    if (t === "bicycle" || t === "walking") return <Bike className={className} />;
+    if (t === "car" || t === "suv" || t === "flight") return <Car className={className} />;
+    return <Zap className={className} />;
+  }
+  if (log.activity_type === "chat_reflection") return <MessageCircle className={className} />;
+  if (log.activity_type === "receipt_scan") return <Receipt className={className} />;
+  return <FileText className={className} />;
+}
+
+function activityLabel(type: ActivityType) {
+  switch (type) {
+    case "quick_log": return "Quick Log";
+    case "chat_reflection": return "Reflection";
+    case "receipt_scan": return "Receipt Scan";
+    case "interview": return "Interview";
+    default: return type;
+  }
+}
+
+function activityTitle(log: ActivityLog): string {
+  const m = log.metadata;
+  switch (log.activity_type) {
+    case "quick_log": {
+      const parts: string[] = [];
+      if (m.transport) parts.push(tlabel(String(m.transport), TRANSPORT_LABELS));
+      if (m.meal) parts.push(tlabel(String(m.meal), MEAL_LABELS));
+      if (m.energy) parts.push(tlabel(String(m.energy), ENERGY_LABELS));
+      return parts.length ? parts.join(" · ") : "Daily activity logged";
+    }
+    case "chat_reflection": {
+      const ex = m.excerpt ? String(m.excerpt) : "";
+      return ex ? `"${ex.slice(0, 60)}${ex.length > 60 ? "…" : ""}"` : "Personal reflection";
+    }
+    case "receipt_scan":
+      return m.merchant ? String(m.merchant) : "Receipt scanned";
+    case "interview":
+      return m.total_tonnes != null
+        ? `${Number(m.total_tonnes).toFixed(2)} t CO₂ estimated`
+        : "Interview completed";
+    default:
+      return log.activity_type;
+  }
 }
 
 // ─── Score pip ─────────────────────────────────────────────────────────────
 
 function ScorePip({ score }: { score: number }) {
   return (
-    <span className="flex items-center gap-[3px]" aria-label={`Score: ${SCORE_LABELS[score] ?? score}`}>
+    <span className="flex items-center gap-[3px]" aria-label={SCORE_LABELS[score] ?? String(score)}>
       {[1, 2, 3, 4, 5].map((d) => (
         <span
           key={d}
-          className="inline-block w-[5px] h-[5px] rounded-full transition-colors"
-          style={{
-            backgroundColor: d <= score ? "var(--color-accent)" : "var(--color-border)",
-          }}
+          className="inline-block w-[5px] h-[5px] rounded-full"
+          style={{ backgroundColor: d <= score ? "var(--color-accent)" : "var(--color-border)" }}
         />
       ))}
     </span>
   );
 }
 
-// ─── Expanded detail renderers ─────────────────────────────────────────────
+// ─── Expanded detail for a single activity ─────────────────────────────────
 
-function QuickLogDetail({ meta }: { meta: Record<string, unknown> }) {
-  const transport = meta.transport ? String(meta.transport) : null;
-  const meal = meta.meal ? String(meta.meal) : null;
-  const energy = meta.energy ? String(meta.energy) : null;
-  const notes = meta.notes ? String(meta.notes) : null;
-  return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-2 mt-3">
-      {transport && (
-        <>
-          <dt className="text-[9px] uppercase tracking-[0.18em] text-muted">Transport</dt>
-          <dd className="text-xs text-foreground font-medium">{transportLabel(transport)}</dd>
-        </>
-      )}
-      {meal && (
-        <>
-          <dt className="text-[9px] uppercase tracking-[0.18em] text-muted">Meal</dt>
-          <dd className="text-xs text-foreground font-medium">{mealLabel(meal)}</dd>
-        </>
-      )}
-      {energy && (
-        <>
-          <dt className="text-[9px] uppercase tracking-[0.18em] text-muted">Energy</dt>
-          <dd className="text-xs text-foreground font-medium">{energyLabel(energy)}</dd>
-        </>
-      )}
-      {notes && (
-        <>
-          <dt className="text-[9px] uppercase tracking-[0.18em] text-muted col-span-2 mt-1">Notes</dt>
-          <dd className="text-xs text-foreground col-span-2 italic leading-relaxed">
-            &ldquo;{notes}&rdquo;
-          </dd>
-        </>
-      )}
-    </dl>
-  );
-}
+function ActivityDetail({ log }: { log: ActivityLog }) {
+  const m = log.metadata;
 
+  if (log.activity_type === "quick_log") {
+    const transport = m.transport ? String(m.transport) : null;
+    const meal = m.meal ? String(m.meal) : null;
+    const energy = m.energy ? String(m.energy) : null;
+    const notes = m.notes ? String(m.notes) : null;
+    return (
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
+        {transport && (
+          <><dt className="text-[9px] uppercase tracking-[0.16em] text-muted">Transport</dt>
+          <dd className="text-xs text-foreground font-medium">{tlabel(transport, TRANSPORT_LABELS)}</dd></>
+        )}
+        {meal && (
+          <><dt className="text-[9px] uppercase tracking-[0.16em] text-muted">Meal</dt>
+          <dd className="text-xs text-foreground font-medium">{tlabel(meal, MEAL_LABELS)}</dd></>
+        )}
+        {energy && (
+          <><dt className="text-[9px] uppercase tracking-[0.16em] text-muted">Energy</dt>
+          <dd className="text-xs text-foreground font-medium">{tlabel(energy, ENERGY_LABELS)}</dd></>
+        )}
+        {notes && (
+          <><dt className="text-[9px] uppercase tracking-[0.16em] text-muted col-span-2">Notes</dt>
+          <dd className="text-xs text-foreground col-span-2 italic">&ldquo;{notes}&rdquo;</dd></>
+        )}
+      </dl>
+    );
+  }
 
-function ReflectionDetail({ meta }: { meta: Record<string, unknown> }) {
-  const excerpt = meta.excerpt ? String(meta.excerpt) : "";
-  return (
-    <blockquote className="mt-3 border-l-2 border-accent/30 pl-3">
-      <p className="text-xs text-foreground italic leading-relaxed">
-        {excerpt ? `"${excerpt}"` : "No excerpt stored."}
-      </p>
-    </blockquote>
-  );
-}
-
-function ReceiptDetail({ meta }: { meta: Record<string, unknown> }) {
-  const items = Array.isArray(meta.items) ? (meta.items as string[]) : [];
-  const merchant = meta.merchant ? String(meta.merchant) : null;
-  const aiNote = meta.ai_note ? String(meta.ai_note) : null;
-  return (
-    <div className="mt-3 space-y-2">
-      {merchant && (
-        <p className="text-[9px] uppercase tracking-[0.18em] text-muted">
-          Merchant:{" "}
-          <span className="text-foreground font-medium normal-case">{merchant}</span>
+  if (log.activity_type === "chat_reflection") {
+    const excerpt = m.excerpt ? String(m.excerpt) : null;
+    return (
+      <blockquote className="mt-2 border-l-2 border-foreground/20 pl-2.5">
+        <p className="text-xs text-foreground italic leading-relaxed">
+          {excerpt ? `"${excerpt}"` : "No excerpt stored."}
         </p>
-      )}
-      {items.length > 0 && (
-        <ul className="list-disc list-inside space-y-0.5">
-          {items.map((item, i) => (
-            <li key={i} className="text-xs text-foreground/80">
-              {item}
-            </li>
-          ))}
-        </ul>
-      )}
-      {aiNote && (
-        <p className="text-xs text-muted italic mt-2">{aiNote}</p>
+      </blockquote>
+    );
+  }
+
+  if (log.activity_type === "receipt_scan") {
+    const items = Array.isArray(m.items) ? (m.items as string[]) : [];
+    const merchant = m.merchant ? String(m.merchant) : null;
+    const aiNote = m.ai_note ? String(m.ai_note) : null;
+    return (
+      <div className="mt-2 space-y-1.5">
+        {merchant && <p className="text-xs text-foreground font-medium">{merchant}</p>}
+        {items.length > 0 && (
+          <ul className="list-disc list-inside space-y-0.5">
+            {items.map((item, i) => <li key={i} className="text-xs text-foreground/70">{item}</li>)}
+          </ul>
+        )}
+        {aiNote && <p className="text-xs text-muted italic">{aiNote}</p>}
+      </div>
+    );
+  }
+
+  if (log.activity_type === "interview") {
+    const tonnes = m.total_tonnes != null ? Number(m.total_tonnes).toFixed(3) : null;
+    const mode = m.mode ? String(m.mode) : null;
+    return (
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
+        {tonnes && (
+          <><dt className="text-[9px] uppercase tracking-[0.16em] text-muted">Estimated CO₂</dt>
+          <dd className="text-xs text-foreground font-medium">{tonnes} t</dd></>
+        )}
+        {mode && (
+          <><dt className="text-[9px] uppercase tracking-[0.16em] text-muted">Mode</dt>
+          <dd className="text-xs text-foreground font-medium capitalize">{mode}</dd></>
+        )}
+      </dl>
+    );
+  }
+
+  return null;
+}
+
+// ─── Single activity row (within a day group) ──────────────────────────────
+
+function ActivityRow({ log }: { log: ActivityLog }) {
+  const [expanded, setExpanded] = useState(false);
+  const title = activityTitle(log);
+  const timeStr = format(parseISO(log.logged_at), "HH:mm");
+
+  return (
+    <div className="border-t border-border/20 first:border-t-0">
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full text-left py-2.5 group"
+        aria-expanded={expanded}
+      >
+        <div className="flex items-start gap-2.5">
+          {/* Activity type icon */}
+          <span className="mt-0.5 shrink-0 w-5 h-5 rounded flex items-center justify-center bg-foreground/5">
+            {activityIcon(log, "w-3 h-3 text-foreground/60")}
+          </span>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] uppercase tracking-[0.14em] text-muted">
+              {activityLabel(log.activity_type)}
+            </p>
+            <p className="text-sm font-serif font-semibold text-foreground leading-snug line-clamp-1 group-hover:text-accent transition-colors">
+              {title}
+            </p>
+          </div>
+
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <ScorePip score={log.consciousness_score} />
+            <span className="text-[9px] text-muted/50">{timeStr}</span>
+            {expanded
+              ? <ChevronUp className="w-3 h-3 text-muted/30" />
+              : <ChevronDown className="w-3 h-3 text-muted/30" />
+            }
+          </div>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="pb-3 pl-7 animate-in fade-in slide-in-from-top-1 duration-150">
+          <ActivityDetail log={log} />
+          <p className="text-[9px] text-muted/40 mt-2">
+            Logged {format(parseISO(log.logged_at), "EEEE, d MMMM 'at' HH:mm")}
+          </p>
+        </div>
       )}
     </div>
   );
 }
 
+// ─── Day group (one timeline node per calendar day) ─────────────────────────
 
-function InterviewDetail({ meta }: { meta: Record<string, unknown> }) {
-  const tonnes = meta.total_tonnes != null ? Number(meta.total_tonnes).toFixed(3) : null;
-  const mode = meta.mode ? String(meta.mode) : null;
-  return (
-    <dl className="grid grid-cols-2 gap-x-6 gap-y-2 mt-3">
-      {tonnes && (
-        <>
-          <dt className="text-[9px] uppercase tracking-[0.18em] text-muted">Estimated CO₂</dt>
-          <dd className="text-xs text-foreground font-medium">{tonnes} t</dd>
-        </>
-      )}
-      {mode && (
-        <>
-          <dt className="text-[9px] uppercase tracking-[0.18em] text-muted">Mode</dt>
-          <dd className="text-xs text-foreground font-medium capitalize">{mode}</dd>
-        </>
-      )}
-    </dl>
+function DayGroup({ day, items }: { day: string; items: ActivityLog[] }) {
+  const [expanded, setExpanded] = useState(true); // open by default
+  const date = parseISO(day);
+  const isToday = day === format(new Date(), "yyyy-MM-dd");
+  const avgScore = Math.round(
+    items.reduce((sum, i) => sum + i.consciousness_score, 0) / items.length
   );
-}
-
-// ─── Activity config (defined after helpers so they're in scope) ────────────
-
-function activityConfig(type: ActivityType) {
-  switch (type) {
-    case "quick_log":
-      return {
-        label: "Quick Log",
-        Icon: Zap,
-        briefTitle: (meta: Record<string, unknown>) => {
-          const parts: string[] = [];
-          if (meta.transport) parts.push(transportLabel(String(meta.transport)));
-          if (meta.meal) parts.push(mealLabel(String(meta.meal)));
-          if (meta.energy) parts.push(energyLabel(String(meta.energy)));
-          return parts.length > 0 ? parts.join(" · ") : "Daily activity logged";
-        },
-      };
-    case "chat_reflection":
-      return {
-        label: "Reflection",
-        Icon: MessageCircle,
-        briefTitle: (meta: Record<string, unknown>) =>
-          meta.excerpt ? `"${String(meta.excerpt).slice(0, 60)}${String(meta.excerpt).length > 60 ? "…" : ""}"` : "Personal reflection",
-      };
-    case "receipt_scan":
-      return {
-        label: "Receipt Scan",
-        Icon: Receipt,
-        briefTitle: (meta: Record<string, unknown>) =>
-          meta.merchant ? String(meta.merchant) : "Receipt scanned",
-      };
-    case "interview":
-      return {
-        label: "Interview",
-        Icon: FileText,
-        briefTitle: (meta: Record<string, unknown>) =>
-          meta.total_tonnes != null
-            ? `${Number(meta.total_tonnes).toFixed(2)} t CO₂ estimated`
-            : "Interview completed",
-      };
-    default:
-      return {
-        label: type,
-        Icon: Zap,
-        briefTitle: () => type,
-      };
-  }
-}
-
-// ─── Single Timeline Item ──────────────────────────────────────────────────
-
-function ActivityTimelineItem({ log }: { log: ActivityLog }) {
-  const [expanded, setExpanded] = useState(false);
-
-  const { label, Icon, briefTitle } = activityConfig(log.activity_type);
-  const title = briefTitle(log.metadata);
-  const dateStr = format(parseISO(log.logged_at), "d MMM yyyy");
-  const timeStr = format(parseISO(log.logged_at), "HH:mm");
 
   return (
     <TimelineItem>
-      {/* Vertical connecting line */}
-      <TimelineConnector className="bg-foreground/25" />
+      <TimelineConnector className="bg-foreground/20" />
 
-      {/* Dot — light bg, dark border, dark icon */}
+      {/* Day dot */}
       <TimelineDot
-        className="border-2 border-foreground/70 bg-background shadow-sm"
-        style={{ "--timeline-dot-size": "2rem" } as React.CSSProperties}
-      >
-        {log.activity_type === "quick_log" ? (
-          <TransportIcon
-            value={String(log.metadata.transport ?? "")}
-            className="w-4 h-4 text-foreground"
-          />
-        ) : (
-          <Icon className="w-4 h-4 text-foreground" />
-        )}
-      </TimelineDot>
+        className="border-2 border-foreground/60 bg-background"
+        style={{ "--timeline-dot-size": "0.75rem" } as React.CSSProperties}
+      />
 
-      {/* Content card */}
-      <TimelineContent className="pb-6 last:pb-0">
+      <TimelineContent className="pb-8 last:pb-0">
+        {/* Day header — clickable to expand/collapse */}
         <button
           onClick={() => setExpanded((e) => !e)}
-          className="w-full text-left group rounded-lg"
-          aria-expanded={expanded}
-          aria-label={`${label}: ${title}`}
+          className="w-full text-left group mb-0.5"
         >
-          {/* ── Brief row ── */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] uppercase tracking-[0.18em] text-muted mb-1 font-sans">
-                {label}
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="flex items-baseline gap-2">
+              <p className="text-lg font-serif font-bold text-foreground group-hover:text-accent transition-colors">
+                {isToday ? "Today" : format(date, "d MMMM")}
               </p>
-              <p className="text-lg font-serif font-bold text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors duration-150">
-                {title}
+              <p className="text-[9px] uppercase tracking-[0.18em] text-muted">
+                {format(date, "EEEE")}
               </p>
             </div>
-
-            <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
-              <ScorePip score={log.consciousness_score} />
-              <time
-                dateTime={log.logged_at}
-                className="text-[9px] tracking-wide text-muted/60 whitespace-nowrap"
-              >
-                {dateStr}
-              </time>
-              <time className="text-[9px] text-muted/40">{timeStr}</time>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] text-muted/50">
+                {items.length} {items.length === 1 ? "entry" : "entries"}
+              </span>
+              <ScorePip score={avgScore} />
+              {expanded
+                ? <ChevronUp className="w-3 h-3 text-muted/30" />
+                : <ChevronDown className="w-3 h-3 text-muted/30" />
+              }
             </div>
-          </div>
-
-          {/* Expand chevron */}
-          <div className="flex items-center gap-1 mt-2 text-muted/30 group-hover:text-muted/60 transition-colors">
-            {expanded ? (
-              <ChevronUp className="w-3 h-3" />
-            ) : (
-              <ChevronDown className="w-3 h-3" />
-            )}
-            <span className="text-[9px] uppercase tracking-[0.15em]">
-              {expanded ? "Collapse" : "Details"}
-            </span>
           </div>
         </button>
 
-        {/* ── Expanded detail ── */}
+        {/* Activity list */}
         {expanded && (
-          <div
-            className="mt-3 pt-3 border-t border-border/25 animate-in fade-in slide-in-from-top-1 duration-150"
-          >
-            {/* Consciousness score row */}
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[9px] uppercase tracking-[0.18em] text-muted">
-                Consciousness
-              </span>
-              <span className="text-xs text-foreground font-medium">
-                {SCORE_LABELS[log.consciousness_score] ?? log.consciousness_score}
-              </span>
-            </div>
-
-            {/* Type-specific details */}
-            {log.activity_type === "quick_log" && <QuickLogDetail meta={log.metadata} />}
-            {log.activity_type === "chat_reflection" && <ReflectionDetail meta={log.metadata} />}
-            {log.activity_type === "receipt_scan" && <ReceiptDetail meta={log.metadata} />}
-            {log.activity_type === "interview" && <InterviewDetail meta={log.metadata} />}
-
-            {/* Precise timestamp footer */}
-            <p className="text-[9px] text-muted/40 mt-3 tracking-wide">
-              Logged {format(parseISO(log.logged_at), "EEEE, d MMMM yyyy 'at' HH:mm")}
-            </p>
+          <div className="mt-1 rounded-lg border border-border/30 bg-background/50 px-3 animate-in fade-in duration-150">
+            {items.map((log) => (
+              <ActivityRow key={log.id} log={log} />
+            ))}
           </div>
         )}
       </TimelineContent>
@@ -364,7 +333,9 @@ function ActivityTimelineItem({ log }: { log: ActivityLog }) {
   );
 }
 
-// ─── Main TimelineView ───────────────────────────────────────────────────
+// ─── Main TimelineView ──────────────────────────────────────────────────────
+// NOTE: parent should pass `key` to force remount when the user logs a new
+// entry or changes the selected date (avoids internal reset race conditions).
 
 export function TimelineView({
   filterDate,
@@ -382,70 +353,62 @@ export function TimelineView({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const fetchingRef = useRef(false);
   const seenIdsRef = useRef<Set<number>>(new Set());
+  // Track current filterDate in a ref to avoid stale closures
+  const filterDateRef = useRef(filterDate);
+  useEffect(() => { filterDateRef.current = filterDate; }, [filterDate]);
 
-  const fetchPage = useCallback(
-    async (cursor?: number) => {
-      if (!user || fetchingRef.current) return;
-      fetchingRef.current = true;
-      setLoading(true);
-      setError(false);
+  const fetchPage = useCallback(async (cursor?: number) => {
+    if (!user || fetchingRef.current) return;
+    fetchingRef.current = true;
+    setLoading(true);
+    setError(false);
 
-      try {
-        const token = await user.getIdToken();
-        const params = new URLSearchParams({ limit: "20" });
-        if (cursor !== undefined) params.set("before_id", String(cursor));
-        if (filterDate) params.set("target_date", filterDate);
+    try {
+      const token = await user.getIdToken();
+      const params = new URLSearchParams({ limit: "20" });
+      if (cursor !== undefined) params.set("before_id", String(cursor));
+      if (filterDateRef.current) params.set("target_date", filterDateRef.current);
 
-        const res = await fetch(`/api/daily/logs?${params}`, {
-          headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`/api/daily/logs?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("fetch failed");
+
+      const data: TimelinePage = await res.json();
+      setAllItems((prev) => {
+        const fresh = data.items.filter((item) => {
+          if (seenIdsRef.current.has(item.id)) return false;
+          seenIdsRef.current.add(item.id);
+          return true;
         });
-        if (!res.ok) throw new Error("fetch failed");
+        return [...prev, ...fresh];
+      });
+      setNextCursor(data.next_cursor);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      fetchingRef.current = false;
+    }
+  }, [user]); // stable — filterDate accessed via ref
 
-        const data: TimelinePage = await res.json();
-        setAllItems((prev) => {
-          const fresh = data.items.filter((item) => {
-            if (seenIdsRef.current.has(item.id)) return false;
-            seenIdsRef.current.add(item.id);
-            return true;
-          });
-          return [...prev, ...fresh];
-        });
-        setNextCursor(data.next_cursor);
-      } catch {
-        setError(true);
-      } finally {
-        setLoading(false);
-        fetchingRef.current = false;
-      }
-    },
-    [user, filterDate]
-  );
-
-  // Reset when filterDate changes
+  // Single effect: fetch when cursor is undefined (initial mount only)
   useEffect(() => {
-    setAllItems([]);
-    seenIdsRef.current = new Set();
-    setNextCursor(undefined);
-    fetchingRef.current = false;
-  }, [filterDate]);
-
-  // Initial load on mount
-  useEffect(() => {
-    if (user && nextCursor === undefined) {
+    if (user && nextCursor === undefined && !fetchingRef.current) {
       fetchPage(undefined);
     }
   }, [user, nextCursor, fetchPage]);
 
-  // Intersection Observer — loads next page when sentinel scrolls into view
+  // Intersection Observer — loads next page as sentinel enters viewport
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const isVisible = entries[0].isIntersecting;
+        const visible = entries[0].isIntersecting;
         const hasMore = nextCursor !== null && nextCursor !== undefined;
-        if (isVisible && hasMore && !fetchingRef.current) {
+        if (visible && hasMore && !fetchingRef.current) {
           fetchPage(nextCursor);
         }
       },
@@ -456,7 +419,18 @@ export function TimelineView({
     return () => observer.disconnect();
   }, [nextCursor, fetchPage]);
 
-  // ── Initial loading skeleton ──
+  // Group items by calendar day (descending order preserved)
+  const dayGroups = useMemo(() => {
+    const map = new Map<string, ActivityLog[]>();
+    for (const item of allItems) {
+      const day = format(parseISO(item.logged_at), "yyyy-MM-dd");
+      if (!map.has(day)) map.set(day, []);
+      map.get(day)!.push(item);
+    }
+    return Array.from(map.entries()); // already in desc order from API
+  }, [allItems]);
+
+  // ── Loading (initial) ──
   if (nextCursor === undefined && loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -469,21 +443,29 @@ export function TimelineView({
   if (!loading && allItems.length === 0 && nextCursor === null) {
     return (
       <div className="py-12 text-center">
-        <p className="text-xs text-muted tracking-wide">No activity logged yet.</p>
-        <p className="text-[10px] text-muted/50 mt-1">
-          Use the ⚡ button below to start tracking.
+        <p className="text-xs text-muted tracking-wide">
+          {filterDate
+            ? `No activity logged on ${format(parseISO(filterDate), "d MMMM yyyy")}.`
+            : "No activity logged yet."}
         </p>
+        {filterDate && (
+          <button
+            onClick={onClearFilter}
+            className="mt-2 text-[10px] uppercase tracking-widest text-accent hover:underline"
+          >
+            View all days
+          </button>
+        )}
       </div>
     );
   }
 
   return (
     <section aria-label="Activity timeline" className="w-full">
-      {/* Section header — broadsheet style */}
-      <div className="flex items-baseline justify-between mb-8 pb-3 border-b border-border/40">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8 pb-3 border-b border-border/40">
         <div className="flex items-center gap-3">
           <h2 className="text-base font-serif text-foreground tracking-wide">Activity Log</h2>
-          {/* Active date filter pill */}
           {filterDate && (
             <button
               onClick={onClearFilter}
@@ -496,23 +478,23 @@ export function TimelineView({
         </div>
         {allItems.length > 0 && (
           <span className="text-[9px] uppercase tracking-[0.2em] text-muted">
-            {allItems.length} entr{allItems.length === 1 ? "y" : "ies"}
+            {dayGroups.length} day{dayGroups.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
 
-      {allItems.length > 0 && (
-        <Timeline orientation="vertical" variant="default" className="[--timeline-dot-size:1.625rem]">
-          {allItems.map((log) => (
-            <ActivityTimelineItem key={log.id} log={log} />
+      {dayGroups.length > 0 && (
+        <Timeline orientation="vertical" variant="default" className="[--timeline-dot-size:0.75rem]">
+          {dayGroups.map(([day, items]) => (
+            <DayGroup key={day} day={day} items={items} />
           ))}
         </Timeline>
       )}
 
-      {/* Invisible scroll sentinel — triggers next page load */}
+      {/* Scroll sentinel */}
       <div ref={sentinelRef} className="h-px" aria-hidden="true" />
 
-      {/* Loading more indicator */}
+      {/* Loading more */}
       {loading && allItems.length > 0 && (
         <div className="flex justify-center py-8">
           <Spinner className="h-4 w-4 text-accent" />
@@ -526,7 +508,7 @@ export function TimelineView({
         </p>
       )}
 
-      {/* Error + retry */}
+      {/* Error */}
       {error && (
         <div className="text-center py-6">
           <p className="text-xs text-muted">Failed to load entries.</p>

@@ -1,15 +1,19 @@
-"""Integration tests for the Daily Tracking API endpoints."""
+"""Integration tests for the new Daily Tracking multi-log API endpoints."""
 from datetime import date, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from app.database import Base, get_session
 from app.main import app
-from app.models.daily_entry import DailyEntry
+from app.models.user import User
+from app.models.activity_log import ActivityLog, ActivityType
+from app.models.daily_summary import DailySummary
 
 
 # ---------------------------------------------------------------------------
@@ -55,20 +59,10 @@ def _auth_mock(uid: str = "test_uid") -> AsyncMock:
 
 def _auth_mock_failing() -> AsyncMock:
     """Return an AsyncMock that raises 401 (simulates invalid token)."""
-    from fastapi import HTTPException
-
     return AsyncMock(side_effect=HTTPException(status_code=401, detail="Invalid token"))
 
 
-def _entry_payload(**overrides):
-    """Minimal valid daily entry payload."""
-    return {
-        "transport_mode": "walking",
-        "meals_count": 2,
-        "energy_usage": "low",
-        "carbon_consciousness": 4,
-        **overrides,
-    }
+_AUTH_HEADERS = {"Authorization": "Bearer fake-test-token"}
 
 
 # ---------------------------------------------------------------------------
@@ -76,55 +70,110 @@ def _entry_payload(**overrides):
 # ---------------------------------------------------------------------------
 
 
-_AUTH_HEADERS = {"Authorization": "Bearer fake-test-token"}
-
-
 @pytest.mark.asyncio
-async def test_create_daily_entry_success(client):
-    """POST /api/daily with valid auth and payload returns 201."""
+async def test_log_quick_entry_success(client, db_session):
+    """POST /api/daily/log/quick with valid auth and payload logs activity and updates summary."""
+    payload = {
+        "transport": "bicycle",
+        "meal": "vegan",
+        "energy": "low",
+        "notes": "Rode bike to work and had a vegan salad.",
+        "consciousness_score": 5,
+    }
     with patch("app.api.daily.verify_firebase_token", _auth_mock()):
         resp = await client.post(
-            "/api/daily", json=_entry_payload(), headers=_AUTH_HEADERS
+            "/api/daily/log/quick", json=payload, headers=_AUTH_HEADERS
         )
 
     assert resp.status_code == 201
     data = resp.json()
-    assert data["transport_mode"] == "walking"
-    assert data["carbon_consciousness"] == 4
-    assert data["date"] == str(date.today())
+    assert data["activity_type"] == "quick_log"
+    assert data["consciousness_score"] == 5
+    assert data["metadata"]["transport"] == "bicycle"
+    assert data["metadata"]["meal"] == "vegan"
     assert "id" in data
 
+    # Verify database state
+    stmt = select(ActivityLog).where(ActivityLog.firebase_uid == "test_uid")
+    logs = (await db_session.execute(stmt)).scalars().all()
+    assert len(logs) == 1
+    assert logs[0].consciousness_score == 5
 
-@pytest.mark.asyncio
-async def test_create_daily_entry_duplicate_date(client):
-    """POST /api/daily twice for the same day returns 409 on second call."""
-    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
-        resp1 = await client.post(
-            "/api/daily", json=_entry_payload(), headers=_AUTH_HEADERS
-        )
-        assert resp1.status_code == 201
-
-        resp2 = await client.post(
-            "/api/daily", json=_entry_payload(), headers=_AUTH_HEADERS
-        )
-        assert resp2.status_code == 409
-        assert "already exists" in resp2.json()["detail"]
+    # Verify DailySummary was created
+    stmt_sum = select(DailySummary).where(DailySummary.firebase_uid == "test_uid")
+    summaries = (await db_session.execute(stmt_sum)).scalars().all()
+    assert len(summaries) == 1
+    assert summaries[0].aggregate_consciousness == 5
+    assert summaries[0].log_count == 1
 
 
 @pytest.mark.asyncio
-async def test_create_daily_entry_unauthorized(client):
-    """POST /api/daily without valid token returns 401."""
+async def test_log_quick_entry_unauthorized(client):
+    """POST /api/daily/log/quick without valid token returns 401."""
+    payload = {"transport": "car", "consciousness_score": 2}
     with patch("app.api.daily.verify_firebase_token", _auth_mock_failing()):
         resp = await client.post(
-            "/api/daily", json=_entry_payload(), headers=_AUTH_HEADERS
+            "/api/daily/log/quick", json=payload, headers=_AUTH_HEADERS
         )
 
     assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
-async def test_get_streak_data_empty(client):
-    """GET /api/daily/streak with no entries returns zeros."""
+async def test_log_reflection_success(client, db_session):
+    """POST /api/daily/log/reflection logs reflection correctly."""
+    payload = {
+        "message": "Thought about my energy footprint today.",
+        "consciousness_score": 4,
+    }
+    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
+        resp = await client.post(
+            "/api/daily/log/reflection", json=payload, headers=_AUTH_HEADERS
+        )
+
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["activity_type"] == "chat_reflection"
+    assert data["consciousness_score"] == 4
+    assert data["metadata"]["excerpt"] == "Thought about my energy footprint today."
+
+    stmt = select(ActivityLog).where(ActivityLog.firebase_uid == "test_uid")
+    logs = (await db_session.execute(stmt)).scalars().all()
+    assert len(logs) == 1
+    assert logs[0].activity_type == "chat_reflection"
+
+
+@pytest.mark.asyncio
+async def test_log_interview_success(client, db_session):
+    """POST /api/daily/log/interview logs onboarding interview correctly."""
+    payload = {
+        "session_id": "test-session-uuid",
+        "total_tonnes": 3.45,
+        "mode": "detailed",
+    }
+    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
+        resp = await client.post(
+            "/api/daily/log/interview", json=payload, headers=_AUTH_HEADERS
+        )
+
+    assert resp.status_code == 201
+    assert resp.json() == {"status": "ok"}
+
+    stmt = select(ActivityLog).where(ActivityLog.firebase_uid == "test_uid")
+    logs = (await db_session.execute(stmt)).scalars().all()
+    assert len(logs) == 1
+    assert logs[0].activity_type == "interview"
+    assert logs[0].consciousness_score == 5
+    assert logs[0].activity_metadata["session_id"] == "test-session-uuid"
+
+
+@pytest.mark.asyncio
+async def test_get_streak_data_empty(client, db_session):
+    """GET /api/daily/streak with no entries returns zeros and 365 contributions."""
+    # Ensure user exists for streak endpoint
+    db_session.add(User(firebase_uid="test_uid"))
+    await db_session.commit()
+
     with patch("app.api.daily.verify_firebase_token", _auth_mock()):
         resp = await client.get("/api/daily/streak", headers=_AUTH_HEADERS)
 
@@ -133,23 +182,25 @@ async def test_get_streak_data_empty(client):
     assert data["current_streak"] == 0
     assert data["longest_streak"] == 0
     assert data["total_days"] == 0
-    assert len(data["contributions"]) == 365
+    assert len(data["entries"]) == 365
 
 
 @pytest.mark.asyncio
-async def test_get_streak_data_with_entries(client, db_session):
-    """GET /api/daily/streak correctly calculates streaks from entries."""
+async def test_get_streak_data_with_summaries(client, db_session):
+    """GET /api/daily/streak correctly calculates streaks from DailySummary entries."""
     today = date.today()
+    db_session.add(User(firebase_uid="test_uid"))
+    await db_session.commit()
 
-    # Insert 5 consecutive days of entries ending today
+    # Insert 5 consecutive days of summaries ending today
     for i in range(5):
-        entry_date = today - timedelta(days=4 - i)
+        summary_date = today - timedelta(days=4 - i)
         db_session.add(
-            DailyEntry(
+            DailySummary(
                 firebase_uid="test_uid",
-                date=entry_date,
-                transport_mode="bicycle",
-                carbon_consciousness=3,
+                date=summary_date,
+                aggregate_consciousness=4,
+                log_count=1,
             )
         )
     await db_session.commit()
@@ -159,79 +210,57 @@ async def test_get_streak_data_with_entries(client, db_session):
 
     assert resp.status_code == 200
     data = resp.json()
-    assert data["current_streak"] == 5  # 5 consecutive days ending today
-    assert data["longest_streak"] == 5  # all 5 consecutive
+    assert data["current_streak"] == 5
+    assert data["longest_streak"] == 5
     assert data["total_days"] == 5
+    assert len(data["entries"]) == 365
 
 
 @pytest.mark.asyncio
-async def test_get_daily_entries(client, db_session):
-    """GET /api/daily/entries returns user's entries in descending date order."""
-    today = date.today()
-    yesterday = today - timedelta(days=1)
-
-    db_session.add_all(
-        [
-            DailyEntry(
-                firebase_uid="test_uid",
-                date=yesterday,
-                transport_mode="car",
-                carbon_consciousness=2,
-            ),
-            DailyEntry(
-                firebase_uid="test_uid",
-                date=today,
-                transport_mode="bicycle",
-                carbon_consciousness=5,
-            ),
-        ]
-    )
+async def test_get_activity_logs_paginated_and_filtered(client, db_session):
+    """GET /api/daily/logs returns paginated, filtered activity logs."""
+    db_session.add(User(firebase_uid="test_uid"))
     await db_session.commit()
 
+    # Insert a few logs
+    now = datetime.now()
+    yesterday = now - timedelta(days=1)
+
+    log1 = ActivityLog(
+        firebase_uid="test_uid",
+        activity_type=ActivityType.QUICK_LOG,
+        consciousness_score=4,
+        activity_metadata={"transport": "ev"},
+        logged_at=now,
+    )
+    log2 = ActivityLog(
+        firebase_uid="test_uid",
+        activity_type=ActivityType.CHAT_REFLECTION,
+        consciousness_score=3,
+        activity_metadata={"excerpt": "reflex"},
+        logged_at=yesterday,
+    )
+    db_session.add_all([log1, log2])
+    await db_session.commit()
+
+    # Query all
     with patch("app.api.daily.verify_firebase_token", _auth_mock()):
-        resp = await client.get("/api/daily/entries", headers=_AUTH_HEADERS)
+        resp = await client.get("/api/daily/logs", headers=_AUTH_HEADERS)
 
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, list)
-    assert len(data) == 2
-    # Descending order: today first
-    assert data[0]["date"] == str(today)
-    assert data[0]["carbon_consciousness"] == 5
-    assert data[1]["date"] == str(yesterday)
-    assert data[1]["carbon_consciousness"] == 2
+    assert len(data["items"]) == 2
+    assert data["items"][0]["activity_type"] == "chat_reflection"
+    assert data["items"][1]["activity_type"] == "quick_log"
 
-
-@pytest.mark.asyncio
-async def test_contribution_graph_data(client, db_session):
-    """GET /api/daily/streak contributions has 365 items with date and intensity."""
-    today = date.today()
-    db_session.add(
-        DailyEntry(
-            firebase_uid="test_uid",
-            date=today,
-            transport_mode="walking",
-            carbon_consciousness=4,
+    # Test date filtering
+    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
+        resp_filtered = await client.get(
+            f"/api/daily/logs?target_date={yesterday.date().isoformat()}",
+            headers=_AUTH_HEADERS,
         )
-    )
-    await db_session.commit()
 
-    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
-        resp = await client.get("/api/daily/streak", headers=_AUTH_HEADERS)
-
-    assert resp.status_code == 200
-    data = resp.json()
-    contributions = data["contributions"]
-
-    assert len(contributions) == 365
-    # Check structure of each item
-    for item in contributions:
-        assert "date" in item
-        assert "intensity" in item
-        assert isinstance(item["intensity"], int)
-        assert 0 <= item["intensity"] <= 4
-
-    # Today's entry should have intensity > 0 (carbon_consciousness 4 → intensity 4)
-    today_item = contributions[-1]
-    assert today_item["date"] == str(today)
-    assert today_item["intensity"] == 4
+    assert resp_filtered.status_code == 200
+    data_filtered = resp_filtered.json()
+    assert len(data_filtered["items"]) == 1
+    assert data_filtered["items"][0]["activity_type"] == "chat_reflection"

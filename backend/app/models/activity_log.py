@@ -7,7 +7,7 @@ The daily_summaries table holds the aggregated score for the heatmap.
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -65,7 +65,7 @@ class ActivityLog(Base):
     # Rich JSON payload for future timeline view
     activity_metadata: Mapped[dict] = mapped_column(
         "metadata",
-        JSONB,
+        JSON().with_variant(JSONB, "postgresql"),
         nullable=False,
         default=dict,
         server_default="{}",

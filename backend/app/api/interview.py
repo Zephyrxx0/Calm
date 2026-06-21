@@ -65,22 +65,23 @@ async def start_interview(
     db.add(session)
     await db.commit()
     await db.refresh(session)
+    s_id = session.id
 
     # Initialize interview state
     state = InterviewState()
-    session_states[str(session.id)] = state
+    session_states[str(s_id)] = state
 
     # Generate initial greeting/question
     coach = get_ai_coach()
     ai_result = await coach.generate_response(state, "")
 
     # Save AI greeting to DB
-    ai_msg = Message(session_id=session.id, role="ai", content=ai_result["text"])
+    ai_msg = Message(session_id=s_id, role="ai", content=ai_result["text"])
     db.add(ai_msg)
     await db.commit()
 
     return {
-        "session_id": str(session.id),
+        "session_id": str(s_id),
         "initial_message": ai_result["text"],
     }
 
