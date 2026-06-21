@@ -387,7 +387,7 @@ export function ContributionGraph() {
       </div>
 
       {/* Heatmap + vertical legend */}
-      <div className="flex gap-4 items-center justify-center min-h-[380px]">
+      <div className="flex gap-4 items-center justify-center min-h-[300px]">
         {viewMode === "month" ? (
           <MonthlyView
             viewMonth={viewMonth}
