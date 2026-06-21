@@ -75,7 +75,7 @@ function DayCell({
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  const sizeClass = size === "sm" ? "w-4 h-4 rounded-[3px]" : "w-full aspect-square rounded-[4px]";
+  const sizeClass = size === "sm" ? "w-2.5 h-2.5 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
 
   return (
     <div
@@ -146,7 +146,7 @@ function MonthlyView({
   const emptyCells = Array.from({ length: startWeekday });
 
   return (
-    <div className="flex-1 max-w-md mx-auto w-full">
+    <div className="flex-1">
       {/* Navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -262,7 +262,7 @@ function YearlyView({
       </div>
 
       {/* Grid: 7 rows (days) × N columns (weeks) */}
-      <div className="flex justify-center pb-1 overflow-x-auto">
+      <div className="flex justify-center pb-1">
         <div
           className="grid gap-[3px]"
           style={{
@@ -276,14 +276,19 @@ function YearlyView({
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             return days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
+              const inYear = day.getFullYear() === viewYear.getFullYear();
               return (
-                <div key={dateStr} className="w-4 h-4">
-                  <DayCell
-                    date={day}
-                    intensity={map.get(dateStr) ?? 0}
-                    isFutureDate={isFuture(day)}
-                    size="sm"
-                  />
+                <div key={dateStr} className="w-2.5 h-2.5">
+                  {inYear ? (
+                    <DayCell
+                      date={day}
+                      intensity={map.get(dateStr) ?? 0}
+                      isFutureDate={isFuture(day)}
+                      size="sm"
+                    />
+                  ) : (
+                    <div className="w-2.5 h-2.5" />
+                  )}
                 </div>
               );
             });
@@ -395,7 +400,7 @@ export function ContributionGraph() {
       </div>
 
       {/* Heatmap + vertical legend */}
-      <div className="flex gap-4 items-center justify-center min-h-[340px]">
+      <div className="flex gap-4 items-start justify-center">
         {viewMode === "month" ? (
           <MonthlyView
             viewMonth={viewMonth}
