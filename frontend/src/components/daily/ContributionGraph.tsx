@@ -75,7 +75,7 @@ function DayCell({
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  const sizeClass = size === "sm" ? "w-3 h-3 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
+  const sizeClass = size === "sm" ? "w-2.5 h-2.5 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
 
   return (
     <div
@@ -260,7 +260,7 @@ function YearlyView({
       </div>
 
       {/* Grid: 7 rows (days) × N columns (weeks) */}
-      <div className="flex justify-start pb-1">
+      <div className="flex justify-center pb-1">
         <div
           className="grid gap-[3px]"
           style={{
@@ -276,7 +276,7 @@ function YearlyView({
               const dateStr = format(day, "yyyy-MM-dd");
               const inYear = day.getFullYear() === viewYear.getFullYear();
               return (
-                <div key={dateStr} className="w-3 h-3">
+                <div key={dateStr} className="w-2.5 h-2.5">
                   {inYear ? (
                     <DayCell
                       date={day}
@@ -285,7 +285,7 @@ function YearlyView({
                       size="sm"
                     />
                   ) : (
-                    <div className="w-3 h-3" />
+                    <div className="w-2.5 h-2.5" />
                   )}
                 </div>
               );
@@ -398,7 +398,7 @@ export function ContributionGraph() {
       </div>
 
       {/* Heatmap + vertical legend */}
-      <div className="flex gap-4 items-start">
+      <div className="flex gap-4 items-start justify-center">
         {viewMode === "month" ? (
           <MonthlyView
             viewMonth={viewMonth}

@@ -149,8 +149,8 @@ export default function DailyPage() {
       {/* Main Content */}
       {viewMode === "tracking" && (
         <div className="flex-1 relative z-10">
-          {/* Hero heatmap — wider container for the yearly grid */}
-          <div className="max-w-5xl mx-auto px-6 pt-10 pb-4">
+          {/* Hero heatmap — constrained width to keep monthly calendar size correct */}
+          <div className="max-w-3xl mx-auto px-6 pt-10 pb-4">
             <ContributionGraph key={graphKey} />
           </div>
 
