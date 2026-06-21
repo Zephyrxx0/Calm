@@ -99,7 +99,7 @@ export default function DailyPage() {
 
       {/* Header */}
       <header className="border-b border-border/50 px-6 py-5 relative z-10 bg-background/50 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               href="/"
@@ -150,7 +150,7 @@ export default function DailyPage() {
       {viewMode === "tracking" && (
         <div className="flex-1 relative z-10">
           {/* Hero heatmap */}
-          <div className="max-w-6xl mx-auto px-6 pt-10 pb-4">
+          <div className="max-w-7xl mx-auto px-6 pt-10 pb-4">
             <ContributionGraph key={graphKey} />
           </div>
 

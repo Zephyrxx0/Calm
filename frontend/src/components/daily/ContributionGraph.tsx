@@ -73,7 +73,7 @@ function DayCell({
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  const sizeClass = "w-10 h-10 sm:w-11 sm:h-11 rounded-[4px]";
+  const sizeClass = "w-5 h-5 rounded-[3px]";
 
   return (
     <div
@@ -180,7 +180,7 @@ function MonthlyView({
 
       {/* Day cells */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-7 gap-[3px]">
           {emptyCells.map((_, i) => <div key={`e-${i}`} />)}
           {days.map((day) => {
             const dateStr = format(day, "yyyy-MM-dd");
@@ -273,9 +273,9 @@ function YearlyView({
       </div>
 
       {/* Grid: 7 rows (days) × N columns (weeks) */}
-      <div className="w-full pb-2 overflow-x-auto">
+      <div className="flex justify-center pb-2 w-full">
         <div
-          className="grid gap-1.5 w-max mx-auto"
+          className="grid gap-[3px]"
           style={{
             gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
             gridTemplateRows: "repeat(7, auto)",
