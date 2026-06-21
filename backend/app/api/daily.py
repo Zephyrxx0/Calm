@@ -1,15 +1,19 @@
 """Daily carbon tracking API — multi-log per day with aggregated heatmap.
 
 Architecture:
-  POST /api/daily/log          — create an activity log (any type, any time)
-  GET  /api/daily/streak       — heatmap data + streaks (reads daily_summaries)
-  GET  /api/daily/logs         — timeline-ready individual logs
-  POST /api/daily/interview    — auto-called when interview completes (internal)
+  POST /api/daily/log/quick       — log a quick-form carbon activity
+  POST /api/daily/log/reflection  — log a chat-style reflection
+  POST /api/daily/log/receipt     — log an AI-analysed receipt
+  POST /api/daily/log/interview   — auto-called when interview finalises
+  GET  /api/daily/logs            — timeline-ready paginated activity logs
+  GET  /api/daily/streak          — heatmap (count-based) + streak stats
+
+Single source of truth: the `activity_logs` table. Both the timeline and the
+heatmap derive from the same rows — the heatmap aggregates them per day.
 """
 from __future__ import annotations
 
-import math
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, UploadFile, File, Form
@@ -20,7 +24,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.firebase_auth import verify_firebase_token
 from app.database import get_session
 from app.models.activity_log import ActivityLog, ActivityType
-from app.models.daily_summary import DailySummary
 from app.models.user import User
 
 router = APIRouter(prefix="/api/daily", tags=["daily"])
@@ -108,40 +111,6 @@ async def _ensure_user(firebase_uid: str, db: AsyncSession) -> None:
         await db.flush()
 
 
-async def _upsert_daily_summary(
-    firebase_uid: str,
-    target_date: date,
-    new_score: int,
-    db: AsyncSession,
-) -> DailySummary:
-    """Insert or update the daily summary, keeping a rolling average."""
-    result = await db.execute(
-        select(DailySummary).where(
-            DailySummary.firebase_uid == firebase_uid,
-            DailySummary.date == target_date,
-        )
-    )
-    summary = result.scalar_one_or_none()
-
-    if summary is None:
-        summary = DailySummary(
-            firebase_uid=firebase_uid,
-            date=target_date,
-            aggregate_consciousness=new_score,
-            log_count=1,
-        )
-        db.add(summary)
-    else:
-        # Rolling average: (current_avg * count + new_score) / (count + 1)
-        new_count = summary.log_count + 1
-        new_avg = (summary.aggregate_consciousness * summary.log_count + new_score) / new_count
-        summary.aggregate_consciousness = max(1, min(5, round(new_avg)))
-        summary.log_count = new_count
-        summary.updated_at = datetime.now(timezone.utc)
-
-    return summary
-
-
 def _score_quick_log(payload: QuickLogPayload) -> int:
     """Heuristic consciousness score from a quick-log form."""
     if payload.consciousness_score is not None:
@@ -184,7 +153,6 @@ async def log_quick_entry(
     await _ensure_user(firebase_uid, db)
 
     score = _score_quick_log(payload)
-    today = date.today()
 
     log = ActivityLog(
         firebase_uid=firebase_uid,
@@ -198,7 +166,6 @@ async def log_quick_entry(
         },
     )
     db.add(log)
-    await _upsert_daily_summary(firebase_uid, today, score, db)
     await db.commit()
     await db.refresh(log)
 
@@ -220,7 +187,6 @@ async def log_chat_reflection(
     """Log a chat/reflection entry."""
     await _ensure_user(firebase_uid, db)
 
-    today = date.today()
     log = ActivityLog(
         firebase_uid=firebase_uid,
         activity_type=ActivityType.CHAT_REFLECTION,
@@ -230,7 +196,6 @@ async def log_chat_reflection(
         },
     )
     db.add(log)
-    await _upsert_daily_summary(firebase_uid, today, payload.consciousness_score, db)
     await db.commit()
     await db.refresh(log)
 
@@ -261,7 +226,6 @@ async def log_interview_completion(
 
     # Completing the interview is always a 5 — it's the most intentional act
     score = 5
-    today = date.today()
 
     log = ActivityLog(
         firebase_uid=firebase_uid,
@@ -274,7 +238,6 @@ async def log_interview_completion(
         },
     )
     db.add(log)
-    await _upsert_daily_summary(firebase_uid, today, score, db)
     await db.commit()
 
     return {"status": "ok"}
@@ -300,7 +263,6 @@ async def log_receipt_scan(
     # --- Gemini Vision Analysis ---
     score, items, ai_note = await _analyze_receipt_with_gemini(image_bytes, file.content_type)
 
-    today = date.today()
     log = ActivityLog(
         firebase_uid=firebase_uid,
         activity_type=ActivityType.RECEIPT_SCAN,
@@ -313,7 +275,6 @@ async def log_receipt_scan(
         },
     )
     db.add(log)
-    await _upsert_daily_summary(firebase_uid, today, score, db)
     await db.commit()
     await db.refresh(log)
 
@@ -383,25 +344,32 @@ async def get_streak_data(
 ) -> StreakResponse:
     """Return the user's current streak, longest streak, and contribution graph.
 
-    Reads from daily_summaries for O(days) performance.
+    Computed directly from activity_logs — one row per logged event. The
+    heatmap intensity reflects the *number of events* on a given day, mapped
+    to a 0..4 scale (so the timeline and heatmap share a single source of
+    truth).
     """
+    # Group activity logs by calendar day (server tz) and count events.
+    day_col = sqlfunc.date(ActivityLog.logged_at).label("day")
     result = await db.execute(
-        select(DailySummary)
-        .where(DailySummary.firebase_uid == firebase_uid)
-        .order_by(DailySummary.date)
+        select(day_col, sqlfunc.count(ActivityLog.id).label("cnt"))
+        .where(ActivityLog.firebase_uid == firebase_uid)
+        .group_by(day_col)
+        .order_by(day_col)
     )
-    summaries = result.scalars().all()
-
-    entry_dates: dict[date, int] = {
-        s.date: s.aggregate_consciousness for s in summaries
-    }
-    all_dates = sorted(entry_dates.keys())
-
+    # Normalise day to a Python `date` — SQLite returns str, Postgres returns date.
+    counts_by_date: dict[date, int] = {}
+    for row in result.all():
+        day_val = row.day
+        if isinstance(day_val, str):
+            day_val = date.fromisoformat(day_val)
+        counts_by_date[day_val] = row.cnt
+    all_dates = sorted(counts_by_date.keys())
 
     # Current streak (consecutive days ending today)
     current_streak = 0
     check_date = date.today()
-    while check_date in entry_dates:
+    while check_date in counts_by_date:
         current_streak += 1
         check_date -= timedelta(days=1)
 
@@ -417,14 +385,14 @@ async def get_streak_data(
                 streak = 1
         longest_streak = max(longest_streak, streak)
 
-    # 365-day contribution window
+    # 365-day contribution window — intensity = bucketed event count.
     today = date.today()
     contributions: List[ContributionData] = []
     for i in range(365):
         d = today - timedelta(days=365 - 1 - i)
-        summary = entry_dates.get(d)
-        consciousness = min(entry_dates[d], 4) if d in entry_dates else 0
-        contributions.append(ContributionData(date=d, carbon_consciousness=consciousness))
+        cnt = counts_by_date.get(d, 0)
+        intensity = _count_to_intensity(cnt)
+        contributions.append(ContributionData(date=d, carbon_consciousness=intensity))
 
     return StreakResponse(
         current_streak=current_streak,
@@ -432,6 +400,26 @@ async def get_streak_data(
         total_days=len(all_dates),
         entries=contributions,
     )
+
+
+def _count_to_intensity(count: int) -> int:
+    """Map a daily event count to a 0..4 heatmap intensity bucket.
+
+    0       → 0  (no entry, page background)
+    1       → 1  (faint warm)
+    2..3    → 2  (light terracotta)
+    4..6    → 3  (medium terracotta)
+    7+      → 4  (deep terracotta)
+    """
+    if count <= 0:
+        return 0
+    if count == 1:
+        return 1
+    if count <= 3:
+        return 2
+    if count <= 6:
+        return 3
+    return 4
 
 
 @router.get("/logs", response_model=TimelinePageResponse)

@@ -351,53 +351,85 @@ export function TimelineView({
   const [error, setError] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const fetchingRef = useRef(false);
-  const seenIdsRef = useRef<Set<number>>(new Set());
-  // Track current filterDate in a ref to avoid stale closures
-  const filterDateRef = useRef(filterDate);
-  useEffect(() => { filterDateRef.current = filterDate; }, [filterDate]);
+  const fetchingMoreRef = useRef(false);
 
-  const fetchPage = useCallback(async (cursor?: number) => {
-    if (!user || fetchingRef.current) return;
-    fetchingRef.current = true;
-    setLoading(true);
+  // Initial fetch + refetch on filter change.  Stale-flag pattern handles
+  // React strict-mode double-invoke and rapid filterDate changes.
+  useEffect(() => {
+    if (!user) return;
+
+    let stale = false;
+    console.log("[TimelineView] starting fetch, filterDate=", filterDate);
+
+    setAllItems([]);
+    setNextCursor(undefined);
     setError(false);
+    setLoading(true);
 
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        if (stale) return;
+
+        const params = new URLSearchParams({ limit: "20" });
+        if (filterDate) params.set("target_date", filterDate);
+
+        const res = await fetch(`/api/daily/logs?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (stale) return;
+
+        if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+        const data: TimelinePage = await res.json();
+        if (stale) return;
+
+        console.log("[TimelineView] received", data.items.length, "items");
+        setAllItems(data.items);
+        setNextCursor(data.next_cursor);
+      } catch (e) {
+        if (stale) return;
+        console.error("[TimelineView] fetch error:", e);
+        setError(true);
+      } finally {
+        if (!stale) setLoading(false);
+      }
+    })();
+
+    return () => {
+      stale = true;
+    };
+  }, [user, filterDate]);
+
+  // Pagination — load older pages as the sentinel enters the viewport.
+  const loadMore = useCallback(async () => {
+    if (!user || nextCursor == null || fetchingMoreRef.current) return;
+    fetchingMoreRef.current = true;
+    setLoading(true);
     try {
       const token = await user.getIdToken();
-      const params = new URLSearchParams({ limit: "20" });
-      if (cursor !== undefined) params.set("before_id", String(cursor));
-      if (filterDateRef.current) params.set("target_date", filterDateRef.current);
-
+      const params = new URLSearchParams({
+        limit: "20",
+        before_id: String(nextCursor),
+      });
+      if (filterDate) params.set("target_date", filterDate);
       const res = await fetch(`/api/daily/logs?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("fetch failed");
-
+      if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
       const data: TimelinePage = await res.json();
       setAllItems((prev) => {
-        const fresh = data.items.filter((item) => {
-          if (seenIdsRef.current.has(item.id)) return false;
-          seenIdsRef.current.add(item.id);
-          return true;
-        });
+        const seen = new Set(prev.map((p) => p.id));
+        const fresh = data.items.filter((it) => !seen.has(it.id));
         return [...prev, ...fresh];
       });
       setNextCursor(data.next_cursor);
-    } catch {
-      setError(true);
+    } catch (e) {
+      console.error("[TimelineView] loadMore error:", e);
     } finally {
       setLoading(false);
-      fetchingRef.current = false;
+      fetchingMoreRef.current = false;
     }
-  }, [user]); // stable — filterDate accessed via ref
-
-  // Single effect: fetch when cursor is undefined (initial mount only)
-  useEffect(() => {
-    if (user && nextCursor === undefined && !fetchingRef.current) {
-      fetchPage(undefined);
-    }
-  }, [user, nextCursor, fetchPage]);
+  }, [user, nextCursor, filterDate]);
 
   // Intersection Observer — loads next page as sentinel enters viewport
   useEffect(() => {
@@ -406,10 +438,8 @@ export function TimelineView({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries[0].isIntersecting;
-        const hasMore = nextCursor !== null && nextCursor !== undefined;
-        if (visible && hasMore && !fetchingRef.current) {
-          fetchPage(nextCursor);
+        if (entries[0].isIntersecting) {
+          loadMore();
         }
       },
       { rootMargin: "300px" }
@@ -417,7 +447,7 @@ export function TimelineView({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [nextCursor, fetchPage]);
+  }, [loadMore]);
 
   // Group items by calendar day (descending order preserved)
   const dayGroups = useMemo(() => {
@@ -430,8 +460,34 @@ export function TimelineView({
     return Array.from(map.entries()); // already in desc order from API
   }, [allItems]);
 
-  // ── Loading (initial) ──
-  if (nextCursor === undefined && loading) {
+  // ── Not authenticated yet ──
+  if (!user) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-xs text-muted tracking-wide">
+          Sign in to view your activity.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Initial fetch hasn't finished yet ──
+  // (`nextCursor === undefined` means we have never received a successful
+  // response for *this* mount — show a spinner unless we actively errored.)
+  if (nextCursor === undefined) {
+    if (error) {
+      return (
+        <div className="py-12 text-center">
+          <p className="text-xs text-muted">Couldn’t load your activity.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-[10px] uppercase tracking-widest text-accent hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center justify-center py-16">
         <Spinner className="h-5 w-5 text-accent" />
@@ -439,8 +495,8 @@ export function TimelineView({
     );
   }
 
-  // ── Empty state ──
-  if (!loading && allItems.length === 0 && nextCursor === null) {
+  // ── Empty (fetch succeeded but nothing to show) ──
+  if (allItems.length === 0 && nextCursor === null) {
     return (
       <div className="py-12 text-center">
         <p className="text-xs text-muted tracking-wide">
@@ -513,7 +569,7 @@ export function TimelineView({
         <div className="text-center py-6">
           <p className="text-xs text-muted">Failed to load entries.</p>
           <button
-            onClick={() => fetchPage(nextCursor ?? undefined)}
+            onClick={() => loadMore()}
             className="mt-2 text-[10px] uppercase tracking-widest text-accent hover:underline"
           >
             Retry

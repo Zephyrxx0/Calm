@@ -13,7 +13,6 @@ from app.database import Base, get_session
 from app.main import app
 from app.models.user import User
 from app.models.activity_log import ActivityLog, ActivityType
-from app.models.daily_summary import DailySummary
 
 
 # ---------------------------------------------------------------------------
@@ -93,18 +92,11 @@ async def test_log_quick_entry_success(client, db_session):
     assert data["metadata"]["meal"] == "vegan"
     assert "id" in data
 
-    # Verify database state
+    # Verify database state — single source of truth is activity_logs
     stmt = select(ActivityLog).where(ActivityLog.firebase_uid == "test_uid")
     logs = (await db_session.execute(stmt)).scalars().all()
     assert len(logs) == 1
     assert logs[0].consciousness_score == 5
-
-    # Verify DailySummary was created
-    stmt_sum = select(DailySummary).where(DailySummary.firebase_uid == "test_uid")
-    summaries = (await db_session.execute(stmt_sum)).scalars().all()
-    assert len(summaries) == 1
-    assert summaries[0].aggregate_consciousness == 5
-    assert summaries[0].log_count == 1
 
 
 @pytest.mark.asyncio
@@ -186,21 +178,23 @@ async def test_get_streak_data_empty(client, db_session):
 
 
 @pytest.mark.asyncio
-async def test_get_streak_data_with_summaries(client, db_session):
-    """GET /api/daily/streak correctly calculates streaks from DailySummary entries."""
+async def test_get_streak_data_with_activities(client, db_session):
+    """GET /api/daily/streak correctly calculates streaks from activity_logs."""
     today = date.today()
     db_session.add(User(firebase_uid="test_uid"))
     await db_session.commit()
 
-    # Insert 5 consecutive days of summaries ending today
+    # Insert 5 consecutive days of activity, each with one event.
     for i in range(5):
-        summary_date = today - timedelta(days=4 - i)
+        log_date = today - timedelta(days=4 - i)
+        # Time component doesn't matter — the streak endpoint groups by DATE().
         db_session.add(
-            DailySummary(
+            ActivityLog(
                 firebase_uid="test_uid",
-                date=summary_date,
-                aggregate_consciousness=4,
-                log_count=1,
+                activity_type=ActivityType.QUICK_LOG,
+                consciousness_score=4,
+                activity_metadata={"transport": "bicycle"},
+                logged_at=datetime.combine(log_date, datetime.min.time()),
             )
         )
     await db_session.commit()
@@ -214,6 +208,38 @@ async def test_get_streak_data_with_summaries(client, db_session):
     assert data["longest_streak"] == 5
     assert data["total_days"] == 5
     assert len(data["entries"]) == 365
+
+    # Today's bucket should be intensity 1 (one event today).
+    today_iso = today.isoformat()
+    today_entry = next(e for e in data["entries"] if e["date"] == today_iso)
+    assert today_entry["carbon_consciousness"] == 1
+
+
+@pytest.mark.asyncio
+async def test_streak_intensity_buckets_count_events(client, db_session):
+    """Heatmap intensity must reflect the *number of events* on a day."""
+    today = date.today()
+    db_session.add(User(firebase_uid="test_uid"))
+    await db_session.commit()
+
+    # 5 events today → bucket 3 (4..6 events).
+    for _ in range(5):
+        db_session.add(
+            ActivityLog(
+                firebase_uid="test_uid",
+                activity_type=ActivityType.QUICK_LOG,
+                consciousness_score=3,
+                activity_metadata={},
+                logged_at=datetime.combine(today, datetime.min.time()),
+            )
+        )
+    await db_session.commit()
+
+    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
+        resp = await client.get("/api/daily/streak", headers=_AUTH_HEADERS)
+
+    today_entry = next(e for e in resp.json()["entries"] if e["date"] == today.isoformat())
+    assert today_entry["carbon_consciousness"] == 3
 
 
 @pytest.mark.asyncio

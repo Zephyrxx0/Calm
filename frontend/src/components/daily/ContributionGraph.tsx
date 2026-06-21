@@ -49,12 +49,15 @@ const INTENSITY_COLORS: Record<number, string> = {
   4: "#7A4920",  // deep rich terracotta
 };
 
-const CONSCIOUSNESS_LABELS: Record<number, string> = {
-  0: "No entry",
-  1: "Not conscious",
-  2: "Slightly conscious",
-  3: "Moderately conscious",
-  4: "Very conscious",
+// Heatmap intensity reflects the *number of activities* that day (the same
+// activities that drive the timeline). Buckets must match the backend
+// `_count_to_intensity` mapping in `app/api/daily.py`.
+const ACTIVITY_LABELS: Record<number, string> = {
+  0: "No activity",
+  1: "1 activity",
+  2: "2–3 activities",
+  3: "4–6 activities",
+  4: "7+ activities",
 };
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -77,8 +80,8 @@ function DayCell({
   isSelected?: boolean;
   onClick?: (dateStr: string) => void;
 }) {
-  const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
-  const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
+  const label = ACTIVITY_LABELS[Math.min(intensity, 4)] ?? "No activity";
+  const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No activity"}`;
   const clickable = intensity > 0 && !isFutureDate && !!onClick;
 
   let sizeClass = "w-full aspect-square rounded-[3px]";
@@ -129,7 +132,7 @@ function VerticalLegend() {
       {[4, 3, 2, 1, 0].map((level) => (
         <div
           key={level}
-          title={CONSCIOUSNESS_LABELS[level]}
+          title={ACTIVITY_LABELS[level]}
           className="w-4 h-4 rounded-[3px]"
           style={{
             backgroundColor: INTENSITY_COLORS[level],

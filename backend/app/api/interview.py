@@ -16,7 +16,6 @@ from app.models.user import User
 from app.services.ai_coach import AICoach, InterviewState, session_states
 from app.services.carbon_model import CarbonModel
 from app.models.activity_log import ActivityLog, ActivityType
-from app.models.daily_summary import DailySummary
 
 router = APIRouter()
 
@@ -191,8 +190,9 @@ async def finalize_interview(
         select(InterviewSession).where(InterviewSession.id == uid)
     )
     session = existing.scalar_one_or_none()
+    is_new_session = session is None
 
-    if session is None:
+    if is_new_session:
         # Auto-create user if authenticated
         if firebase_uid:
             user_result = await db.execute(
@@ -231,17 +231,14 @@ async def finalize_interview(
     await db.commit()
 
     # --- Auto-log interview completion into daily tracking ---
-    if firebase_uid:
-        from datetime import date, datetime, timezone
-        today = date.today()
-
-        # Interview completion always scores 5 (most intentional carbon act)
-        score = 5
-
+    # Only log on the *first* successful finalize for this session — guarantees
+    # one ActivityLog row per interview, regardless of how many times the
+    # frontend retries the request.
+    if firebase_uid and is_new_session:
         log = ActivityLog(
             firebase_uid=firebase_uid,
             activity_type=ActivityType.INTERVIEW,
-            consciousness_score=score,
+            consciousness_score=5,  # interview = most intentional carbon act
             activity_metadata={
                 "session_id": session_id,
                 "total_tonnes": data.total_tonnes,
@@ -249,30 +246,6 @@ async def finalize_interview(
             },
         )
         db.add(log)
-
-        # Upsert daily summary (rolling average)
-        from sqlalchemy import select as _select
-        summary_result = await db.execute(
-            _select(DailySummary).where(
-                DailySummary.firebase_uid == firebase_uid,
-                DailySummary.date == today,
-            )
-        )
-        summary = summary_result.scalar_one_or_none()
-        if summary is None:
-            db.add(DailySummary(
-                firebase_uid=firebase_uid,
-                date=today,
-                aggregate_consciousness=score,
-                log_count=1,
-            ))
-        else:
-            new_count = summary.log_count + 1
-            new_avg = (summary.aggregate_consciousness * summary.log_count + score) / new_count
-            summary.aggregate_consciousness = max(1, min(5, round(new_avg)))
-            summary.log_count = new_count
-            summary.updated_at = datetime.now(timezone.utc)
-
         await db.commit()
 
     return {"status": "ok", "session_id": session_id}

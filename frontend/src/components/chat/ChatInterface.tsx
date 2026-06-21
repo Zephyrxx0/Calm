@@ -39,9 +39,19 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Persist interview results to PostgreSQL when chat ends
+  // Persist interview results to PostgreSQL when chat ends.
+  // Guarded by `finalizedRef` so this only fires *once* per chat — every
+  // message-state mutation (typing animation, etc.) would otherwise re-trigger
+  // it because `messages` is in the dependency list.
+  const finalizedRef = useRef(false);
+  // Read latest messages from a ref to avoid putting `messages` in deps.
+  const messagesRef = useRef<Message[]>(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
   useEffect(() => {
-    if (!endChatData || messages.length === 0) return;
+    if (!endChatData) return;
+    if (finalizedRef.current) return;
+    finalizedRef.current = true;
 
     (async () => {
       try {
@@ -60,14 +70,19 @@ export default function ChatInterface({
             total_tonnes: endChatData.total_tonnes,
             breakdown: endChatData.breakdown,
             mode: endChatData.mode,
-            messages: messages.map((m) => ({ role: m.role, content: m.text })),
+            messages: messagesRef.current.map((m) => ({
+              role: m.role,
+              content: m.text,
+            })),
           }),
         });
       } catch (err) {
         console.error("Finalize failed:", err);
+        // Allow a retry if the call genuinely failed
+        finalizedRef.current = false;
       }
     })();
-  }, [endChatData, sessionId, messages, user]);
+  }, [endChatData, sessionId, user]);
 
   // Typing animation refs
   const pendingBufferRef = useRef("");
