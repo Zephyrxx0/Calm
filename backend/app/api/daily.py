@@ -387,8 +387,25 @@ async def get_streak_data(
     )
     summaries = result.scalars().all()
 
-    entry_dates: dict[date, DailySummary] = {s.date: s for s in summaries}
+    # Build score map from new daily_summaries
+    entry_dates: dict[date, int] = {
+        s.date: s.aggregate_consciousness for s in summaries
+    }
+
+    # Also merge legacy daily_entries so existing data isn't lost
+    from app.models.daily_entry import DailyEntry
+    legacy_result = await db.execute(
+        select(DailyEntry)
+        .where(DailyEntry.firebase_uid == firebase_uid)
+        .order_by(DailyEntry.date)
+    )
+    legacy_entries = legacy_result.scalars().all()
+    for e in legacy_entries:
+        if e.date not in entry_dates:
+            entry_dates[e.date] = min(e.carbon_consciousness, 4)
+
     all_dates = sorted(entry_dates.keys())
+
 
     # Current streak (consecutive days ending today)
     current_streak = 0
@@ -415,13 +432,13 @@ async def get_streak_data(
     for i in range(365):
         d = today - timedelta(days=365 - 1 - i)
         summary = entry_dates.get(d)
-        consciousness = min(summary.aggregate_consciousness, 4) if summary else 0
+        consciousness = min(entry_dates[d], 4) if d in entry_dates else 0
         contributions.append(ContributionData(date=d, carbon_consciousness=consciousness))
 
     return StreakResponse(
         current_streak=current_streak,
         longest_streak=longest_streak,
-        total_days=len(summaries),
+        total_days=len(all_dates),
         entries=contributions,
     )
 
