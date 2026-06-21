@@ -75,7 +75,7 @@ function DayCell({
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  const sizeClass = size === "sm" ? "w-2.5 h-2.5 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
+  const sizeClass = size === "sm" ? "w-5 h-5 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
 
   return (
     <div
@@ -146,7 +146,7 @@ function MonthlyView({
   const emptyCells = Array.from({ length: startWeekday });
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 max-w-lg mx-auto w-full">
       {/* Navigation */}
       <div className="flex items-center justify-between mb-6">
         <button
@@ -250,19 +250,27 @@ function YearlyView({
 
       {/* Month labels row */}
       <div className="relative h-4 mb-1 overflow-hidden">
-        {monthPositions.map(({ label, col }) => (
-          <span
-            key={`${label}-${col}`}
-            className="absolute text-[9px] tracking-wider uppercase text-muted/70"
-            style={{ left: `${(col / weeks.length) * 100}%` }}
-          >
-            {label}
-          </span>
-        ))}
+        {monthPositions.map(({ label, col }) => {
+          const isCurrentMonth = 
+            label === MONTH_LABELS[new Date().getMonth()] &&
+            viewYear.getFullYear() === new Date().getFullYear();
+          
+          return (
+            <span
+              key={`${label}-${col}`}
+              className={`absolute text-[9px] tracking-wider uppercase ${
+                isCurrentMonth ? "text-foreground font-bold" : "text-muted/70"
+              }`}
+              style={{ left: `${(col / weeks.length) * 100}%` }}
+            >
+              {label}
+            </span>
+          );
+        })}
       </div>
 
       {/* Grid: 7 rows (days) × N columns (weeks) */}
-      <div className="flex justify-center pb-1">
+      <div className="flex justify-start pb-1 overflow-x-auto">
         <div
           className="grid gap-[3px]"
           style={{
@@ -276,19 +284,14 @@ function YearlyView({
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             return days.map((day) => {
               const dateStr = format(day, "yyyy-MM-dd");
-              const inYear = day.getFullYear() === viewYear.getFullYear();
               return (
-                <div key={dateStr} className="w-2.5 h-2.5">
-                  {inYear ? (
-                    <DayCell
-                      date={day}
-                      intensity={map.get(dateStr) ?? 0}
-                      isFutureDate={isFuture(day)}
-                      size="sm"
-                    />
-                  ) : (
-                    <div className="w-2.5 h-2.5" />
-                  )}
+                <div key={dateStr} className="w-5 h-5">
+                  <DayCell
+                    date={day}
+                    intensity={map.get(dateStr) ?? 0}
+                    isFutureDate={isFuture(day)}
+                    size="sm"
+                  />
                 </div>
               );
             });
