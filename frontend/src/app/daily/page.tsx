@@ -164,7 +164,7 @@ export default function DailyPage() {
 
           <div className="max-w-2xl mx-auto px-6 pt-8 pb-4">
             <TimelineView
-              key={timelineKey}
+              key={`${timelineKey}-${selectedDate || "all"}`}
               filterDate={selectedDate}
               onClearFilter={() => setSelectedDate(null)}
             />
