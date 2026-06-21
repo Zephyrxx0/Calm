@@ -66,14 +66,19 @@ function DayCell({
   date,
   intensity,
   isFutureDate,
+  size = "md",
 }: {
   date: Date;
   intensity: number;
   isFutureDate: boolean;
+  size?: "sm" | "md" | "lg";
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  const sizeClass = "w-5 h-5 rounded-[3px]";
+  
+  let sizeClass = "w-full aspect-square rounded-[3px]";
+  if (size === "sm") sizeClass = "w-5 h-5 rounded-[3px]";
+  if (size === "lg") sizeClass = "w-10 h-10 sm:w-11 sm:h-11 rounded-[4px]";
 
   return (
     <div
@@ -167,21 +172,20 @@ function MonthlyView({
         </button>
       </div>
 
-      {/* Day labels */}
+      {/* Day labels & cells (combined for perfect alignment) */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-7 gap-1.5 mb-2">
+        <div className="grid grid-cols-7 gap-2">
+          {/* Day Headers */}
           {DAY_LABELS.map((d) => (
-            <div key={d} className="text-center text-[10px] tracking-widest uppercase text-muted/60 pb-1">
+            <div key={d} className="flex items-end justify-center text-[10px] tracking-widest uppercase text-muted/60 pb-1">
               {d.charAt(0)}
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Day cells */}
-      <div className="flex justify-center">
-        <div className="grid grid-cols-7 gap-[3px]">
+          
+          {/* Empty cells for first week offset */}
           {emptyCells.map((_, i) => <div key={`e-${i}`} />)}
+          
+          {/* Actual days */}
           {days.map((day) => {
             const dateStr = format(day, "yyyy-MM-dd");
             return (
@@ -190,6 +194,7 @@ function MonthlyView({
                   date={day}
                   intensity={map.get(dateStr) ?? 0}
                   isFutureDate={isFuture(day)}
+                  size="lg"
                 />
               </div>
             );
@@ -293,6 +298,7 @@ function YearlyView({
                     date={day}
                     intensity={map.get(dateStr) ?? 0}
                     isFutureDate={isFuture(day)}
+                    size="sm"
                   />
                 </div>
               );
@@ -405,7 +411,7 @@ export function ContributionGraph() {
       </div>
 
       {/* Heatmap + vertical legend */}
-      <div className="flex gap-4 items-start justify-center">
+      <div className="flex gap-4 items-center justify-center min-h-[380px]">
         {viewMode === "month" ? (
           <MonthlyView
             viewMonth={viewMonth}
