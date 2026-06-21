@@ -146,9 +146,9 @@ function MonthlyView({
   const emptyCells = Array.from({ length: startWeekday });
 
   return (
-    <div className="flex-1 max-w-lg mx-auto w-full">
+    <div className="flex-1 w-full">
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 max-w-xs mx-auto">
         <button
           onClick={onPrev}
           className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground"
@@ -156,7 +156,7 @@ function MonthlyView({
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <h2 className="text-base font-serif text-foreground tracking-wide">
+        <h2 className="text-base font-serif text-foreground tracking-wide whitespace-nowrap px-4">
           {format(viewMonth, "MMMM yyyy")}
         </h2>
         <button
@@ -170,28 +170,34 @@ function MonthlyView({
       </div>
 
       {/* Day labels */}
-      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-        {DAY_LABELS.map((d) => (
-          <div key={d} className="text-center text-[9px] tracking-widest uppercase text-muted/60 pb-0.5">
-            {d}
-          </div>
-        ))}
+      <div className="flex justify-center">
+        <div className="grid grid-cols-7 gap-1 w-full max-w-[160px] mb-1.5">
+          {DAY_LABELS.map((d) => (
+            <div key={d} className="text-center text-[9px] tracking-widest uppercase text-muted/60 pb-0.5">
+              {d.charAt(0)}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Day cells */}
-      <div className="grid grid-cols-7 gap-1.5">
-        {emptyCells.map((_, i) => <div key={`e-${i}`} />)}
-        {days.map((day) => {
-          const dateStr = format(day, "yyyy-MM-dd");
-          return (
-            <DayCell
-              key={dateStr}
-              date={day}
-              intensity={map.get(dateStr) ?? 0}
-              isFutureDate={isFuture(day)}
-            />
-          );
-        })}
+      <div className="flex justify-center">
+        <div className="grid grid-cols-7 gap-1 w-full max-w-[160px]">
+          {emptyCells.map((_, i) => <div key={`e-${i}`} />)}
+          {days.map((day) => {
+            const dateStr = format(day, "yyyy-MM-dd");
+            return (
+              <div key={dateStr} className="w-full">
+                <DayCell
+                  date={day}
+                  intensity={map.get(dateStr) ?? 0}
+                  isFutureDate={isFuture(day)}
+                  size="md"
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
