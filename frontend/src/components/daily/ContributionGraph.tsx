@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useState, memo, useCallback } from "react";
-import CalendarHeatmap from "react-calendar-heatmap";
-import { subDays, format, parseISO, startOfYear, endOfYear } from "date-fns";
+import { useEffect, useState, useCallback } from "react";
+import {
+  format,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  subMonths,
+  addMonths,
+  isSameMonth,
+  isFuture,
+} from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Calendar } from "lucide-react";
-import "react-calendar-heatmap/dist/styles.css";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface StreakEntry {
   date: string;
@@ -26,13 +29,13 @@ interface StreakStats {
   entries: StreakEntry[];
 }
 
-// 5 intensity levels from muted to accent (#c2856b)
+// 5 intensity levels from muted to accent
 const INTENSITY_COLORS: Record<number, string> = {
-  0: "#f0f0ed",
-  1: "#e8d5c8",
-  2: "#d9c0ab",
-  3: "#caa38a",
-  4: "#c2856b",
+  0: "#e8e6df",  // empty — very light warm grey
+  1: "#e0cfc3",
+  2: "#d4b49e",
+  3: "#c99276",
+  4: "#c2856b",  // full accent
 };
 
 const CONSCIOUSNESS_LABELS: Record<number, string> = {
@@ -41,61 +44,35 @@ const CONSCIOUSNESS_LABELS: Record<number, string> = {
   2: "Slightly conscious",
   3: "Moderately conscious",
   4: "Very conscious",
-  5: "Extremely conscious",
 };
 
-// Custom organic square overlay for crayon-drawn aesthetic
-function OrganicSquareOverlay() {
-  return (
-    <svg
-      className="absolute inset-0 pointer-events-none"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 12 12"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <rect
-        x="0.5"
-        y="0.5"
-        width="11"
-        height="11"
-        fill="none"
-        stroke="rgba(26,26,26,0.08)"
-        strokeWidth="0.5"
-        rx="0.5"
-        strokeDasharray="1.5 1"
-      />
-    </svg>
-  );
-}
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// Custom rect renderer for contribution squares with organic aesthetic
-const CustomRect = memo(function CustomRect({
-  day,
-  className,
+function DayCell({
+  date,
+  intensity,
+  isFutureDate,
 }: {
-  day: Date;
-  className?: string;
+  date: Date;
+  intensity: number;
+  isFutureDate: boolean;
 }) {
-  return (
-    <div className="relative">
-      <div className={className} />
-      <OrganicSquareOverlay />
-    </div>
-  );
-});
+  const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
+  const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
 
-function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Calendar className="h-10 w-10 text-muted mb-4 opacity-30" />
-      <h3 className="text-sm font-serif text-foreground mb-2">
-        Start Your Carbon Journey
-      </h3>
-      <p className="text-xs font-sans text-muted max-w-xs">
-        Track your first day to begin building your streak. Just 30 seconds.
-      </p>
-    </div>
+    <div
+      title={title}
+      className="w-full aspect-square rounded-[3px] transition-all duration-150 cursor-default"
+      style={{
+        backgroundColor: isFutureDate
+          ? "transparent"
+          : INTENSITY_COLORS[Math.min(intensity, 4)],
+        opacity: isFutureDate ? 0.2 : 1,
+        outline: "1px solid rgba(26,26,26,0.07)",
+        outlineOffset: "-1px",
+      }}
+    />
   );
 }
 
@@ -103,252 +80,183 @@ export function ContributionGraph() {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<StreakStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [viewMonth, setViewMonth] = useState(new Date());
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
+    if (authLoading || !user) {
       setLoading(false);
       return;
     }
 
     let cancelled = false;
-
     async function fetchStreak() {
       try {
         const token = await user!.getIdToken();
         const res = await fetch("/api/daily/streak", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) throw new Error("Failed to load streak data");
-
+        if (!res.ok) throw new Error();
         const json: StreakStats = await res.json();
         if (!cancelled) setData(json);
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Something went wrong. Please try refreshing the page."
-          );
-        }
+      } catch {
+        /* fail silently */
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
     fetchStreak();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [user, authLoading]);
 
-  // Build value map for calendar heatmap
   const valueMap = useCallback(() => {
     if (!data?.entries) return new Map<string, number>();
-    return new Map(
-      data.entries.map((e) => [e.date, e.carbon_consciousness])
-    );
+    return new Map(data.entries.map((e) => [e.date, e.carbon_consciousness]));
   }, [data]);
 
-  const classForValue = useCallback(
-    (value: { date: string; count?: number } | null) => {
-      if (!value) return "fill-intensity-0";
-      const intensity = valueMap().get(value.date) ?? 0;
-      return `fill-intensity-${Math.min(intensity, 4)}`;
-    },
-    [valueMap]
-  );
+  const goToPrev = () => setViewMonth((m) => subMonths(m, 1));
+  const goToNext = () => {
+    const next = addMonths(viewMonth, 1);
+    if (!isFuture(startOfMonth(next)) || isSameMonth(next, new Date())) {
+      setViewMonth(next);
+    }
+  };
 
-  const titleForValue = useCallback(
-    (value: { date: string; count?: number } | null) => {
-      if (!value) return "No entry";
-      const intensity = valueMap().get(value.date) ?? 0;
-      const label = CONSCIOUSNESS_LABELS[intensity] ?? "No data";
-      return `${format(parseISO(value.date), "MMM d, yyyy")} — ${label}`;
-    },
-    [valueMap]
-  );
+  const isNextDisabled = isSameMonth(viewMonth, new Date());
 
   if (authLoading || loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
+      <div className="flex items-center justify-center py-24">
         <Spinner className="h-6 w-6 text-accent" />
-        <p className="text-xs text-muted font-sans mt-3">
-          Loading your carbon story...
-        </p>
-        {/* Skeleton grid */}
-        <div className="mt-6 grid grid-cols-7 gap-[2px] opacity-20">
-          {Array.from({ length: 91 }).map((_, i) => (
+      </div>
+    );
+  }
+
+  // Build the monthly grid
+  const monthStart = startOfMonth(viewMonth);
+  const monthEnd = endOfMonth(viewMonth);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  // Leading empty cells so the first day lands on the right weekday column
+  const startWeekday = getDay(monthStart); // 0 = Sunday
+  const emptyCells = Array.from({ length: startWeekday });
+
+  const map = valueMap();
+
+  return (
+    <div className="w-full font-sans">
+      {/* Month header + navigation */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={goToPrev}
+          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <h2 className="text-base font-serif text-foreground tracking-wide">
+          {format(viewMonth, "MMMM yyyy")}
+        </h2>
+        <button
+          onClick={goToNext}
+          disabled={isNextDisabled}
+          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next month"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Heatmap + vertical legend side-by-side */}
+      <div className="flex gap-4 items-start">
+        {/* Calendar grid */}
+        <div className="flex-1">
+          {/* Day-of-week labels */}
+          <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+            {DAY_LABELS.map((d) => (
+              <div
+                key={d}
+                className="text-center text-[9px] tracking-widest uppercase text-muted/60 pb-0.5"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Day cells */}
+          <div className="grid grid-cols-7 gap-1.5">
+            {emptyCells.map((_, i) => (
+              <div key={`empty-${i}`} />
+            ))}
+            {days.map((day) => {
+              const dateStr = format(day, "yyyy-MM-dd");
+              const intensity = map.get(dateStr) ?? 0;
+              return (
+                <DayCell
+                  key={dateStr}
+                  date={day}
+                  intensity={intensity}
+                  isFutureDate={isFuture(day)}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Vertical legend */}
+        <div className="flex flex-col items-center gap-1.5 pt-5 shrink-0">
+          <span className="text-[9px] tracking-[0.15em] uppercase text-muted/60 mb-0.5 -rotate-90 origin-center whitespace-nowrap" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "0.15em" }}>
+            Less
+          </span>
+          {[4, 3, 2, 1, 0].map((level) => (
             <div
-              key={i}
-              className="w-3 h-3 rounded-[1px] bg-border"
+              key={level}
+              title={CONSCIOUSNESS_LABELS[level]}
+              className="w-4 h-4 rounded-[3px]"
               style={{
-                animationDelay: `${i * 5}ms`,
+                backgroundColor: INTENSITY_COLORS[level],
+                outline: "1px solid rgba(26,26,26,0.09)",
+                outlineOffset: "-1px",
               }}
             />
           ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <EmptyState />
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <p className="text-xs text-destructive font-sans">{error}</p>
-      </div>
-    );
-  }
-
-  const today = new Date();
-  const startDate = startOfYear(today);
-  const endDate = endOfYear(today);
-
-  return (
-    <TooltipProvider delayDuration={200}>
-      <div className="w-full font-sans">
-        {/* Streak Stats */}
-        {data && (
-          <div className="flex items-center justify-center gap-8 mb-8">
-            <div className="text-center">
-              <p className="text-2xl font-serif text-foreground">
-                {data.current_streak}
-              </p>
-              <p className="text-[10px] tracking-[0.15em] uppercase text-muted mt-0.5">
-                Current Streak
-              </p>
-            </div>
-            <div className="w-px h-8 bg-border" aria-hidden="true" />
-            <div className="text-center">
-              <p className="text-2xl font-serif text-foreground">
-                {data.longest_streak}
-              </p>
-              <p className="text-[10px] tracking-[0.15em] uppercase text-muted mt-0.5">
-                Longest Streak
-              </p>
-            </div>
-            <div className="w-px h-8 bg-border" aria-hidden="true" />
-            <div className="text-center">
-              <p className="text-2xl font-serif text-foreground">
-                {data.total_days}
-              </p>
-              <p className="text-[10px] tracking-[0.15em] uppercase text-muted mt-0.5">
-                Total Days
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Contribution Calendar */}
-        <div className="w-full overflow-x-auto pb-2">
-          <div className="min-w-[680px]">
-            <CalendarHeatmap
-              startDate={startDate}
-              endDate={endDate}
-              values={
-                data?.entries.map((e) => ({ date: e.date })) ?? []
-              }
-              classForValue={classForValue}
-              titleForValue={titleForValue}
-              showWeekdayLabels={true}
-              gutterSize={2}
-              horizontal={true}
-            />
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <span className="text-[10px] tracking-[0.1em] uppercase text-muted mr-1">
-            Less
-          </span>
-          {[0, 1, 2, 3, 4].map((level) => (
-            <div
-              key={level}
-              className="relative"
-              title={CONSCIOUSNESS_LABELS[level]}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="0.5"
-                  y="0.5"
-                  width="11"
-                  height="11"
-                  rx="1"
-                  fill={INTENSITY_COLORS[level]}
-                  stroke="rgba(26,26,26,0.08)"
-                  strokeWidth="0.5"
-                />
-              </svg>
-            </div>
-          ))}
-          <span className="text-[10px] tracking-[0.1em] uppercase text-muted ml-1">
+          <span className="text-[9px] tracking-[0.15em] uppercase text-muted/60 mt-0.5" style={{ writingMode: "vertical-rl", letterSpacing: "0.15em" }}>
             More
           </span>
         </div>
       </div>
 
-      {/* Custom CSS for calendar heatmap intensity */}
-      <style jsx global>{`
-        .react-calendar-heatmap .fill-intensity-0 {
-          fill: ${INTENSITY_COLORS[0]};
-        }
-        .react-calendar-heatmap .fill-intensity-1 {
-          fill: ${INTENSITY_COLORS[1]};
-        }
-        .react-calendar-heatmap .fill-intensity-2 {
-          fill: ${INTENSITY_COLORS[2]};
-        }
-        .react-calendar-heatmap .fill-intensity-3 {
-          fill: ${INTENSITY_COLORS[3]};
-        }
-        .react-calendar-heatmap .fill-intensity-4 {
-          fill: ${INTENSITY_COLORS[4]};
-        }
-
-        .react-calendar-heatmap text {
-          font-size: 9px;
-          font-family: var(--font-sans), sans-serif;
-          fill: #8a8a7a;
-        }
-
-        .react-calendar-heatmap rect {
-          rx: 1.5px;
-          stroke: rgba(26, 26, 26, 0.06);
-          stroke-width: 0.5px;
-          transition: opacity 150ms var(--ease-fluid);
-        }
-
-        .react-calendar-heatmap rect:hover {
-          opacity: 0.85;
-          stroke: rgba(194, 133, 107, 0.4);
-          stroke-width: 1px;
-        }
-
-        .react-calendar-heatmap .react-calendar-heatmap-small-text {
-          font-size: 8px;
-        }
-
-        .react-calendar-heatmap
-          .color-empty {
-          fill: #f0f0ed;
-        }
-      `}</style>
-    </TooltipProvider>
+      {/* Streak stats below heatmap */}
+      {data && (
+        <div className="flex items-center justify-center gap-10 mt-8 pt-6 border-t border-border/40">
+          <div className="text-center">
+            <p className="text-3xl font-serif text-foreground leading-none">
+              {data.current_streak}
+            </p>
+            <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">
+              Current Streak
+            </p>
+          </div>
+          <div className="w-px h-10 bg-border" aria-hidden="true" />
+          <div className="text-center">
+            <p className="text-3xl font-serif text-foreground leading-none">
+              {data.longest_streak}
+            </p>
+            <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">
+              Longest Streak
+            </p>
+          </div>
+          <div className="w-px h-10 bg-border" aria-hidden="true" />
+          <div className="text-center">
+            <p className="text-3xl font-serif text-foreground leading-none">
+              {data.total_days}
+            </p>
+            <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">
+              Total Days
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

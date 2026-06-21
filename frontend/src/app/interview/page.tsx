@@ -113,12 +113,12 @@ export default function InterviewPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col min-h-screen bg-background relative overflow-hidden">
+    <main className="flex flex-col h-screen h-[100dvh] bg-background relative overflow-hidden">
       <Grain />
       <DoodleLeaf className="absolute -top-10 -left-10 w-64 h-64 text-accent/5 rotate-[15deg] pointer-events-none" />
       <DoodleSun className="absolute bottom-10 -right-20 w-80 h-80 text-accent/5 pointer-events-none" />
 
-      <header className="border-b border-border/50 px-6 py-5 relative z-10 bg-background/50 backdrop-blur-md">
+      <header className="flex-none border-b border-border/50 px-6 py-5 relative z-50 bg-background/50 backdrop-blur-md">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <a
             href="/"
@@ -143,7 +143,7 @@ export default function InterviewPage() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col relative z-10 h-[calc(100vh-69px)]">
+      <div className="flex-1 flex flex-col relative z-10 min-h-0 overflow-hidden">
         <ChatInterface
           sessionId={sessionId}
           userId={userId}

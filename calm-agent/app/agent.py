@@ -43,6 +43,7 @@ INTERVIEW_INSTRUCTION = """You are Calm, a thoughtful environmental coach. Your 
 - Use short sentences. Break ideas into digestible pieces.
 - Prefer bullet-like points over long paragraphs.
 - One idea per sentence. White space is kind.
+- If the user shared their name, use it occasionally (not every message).
 
 ## Guardrails — CRITICAL
 You have ONE job: carbon footprint interviews. You MUST refuse anything else.
@@ -68,50 +69,77 @@ You have ONE job: carbon footprint interviews. You MUST refuse anything else.
 - Categories covered: {categories_covered}
 - Phase: {phase}
 - Data collected: {extracted_data}
+- User name: {user_name}
+- Questions remaining per category: {category_progress}
 
 ## How to proceed
 
-### If phase is "mode_selection":
-If the user has NOT chosen a mode yet, deliver this intro:
+### If phase is "greeting":
+Say hello and ask how the user would like to be referred to. Keep it light — make it clear this is optional.
 
+Example:
 "Hi, I'm Calm — your personal carbon coach.
-I help people understand their climate impact through a few simple questions about daily life.
 
-Let's start: would you like a quick interview (~10 questions) or a detailed one (~25 questions)?"
+Before we begin, what should I call you? (Totally optional — we can skip this.)"
 
-Then wait for their choice. Do NOT ask anything else until they choose.
+Wait for their response. If they give a name, acknowledge it warmly. If they say skip/nothing/ignore, that's fine — move on.
+After this, transition to mode_selection.
 
-If the user HAS already chosen a mode (they said "quick" or "detailed" in their last message), skip the intro. Acknowledge their choice and start the interview by asking your first question about commute.
+### If phase is "mode_selection":
+Ask whether they'd like a quick interview (~10 questions) or a detailed one (~25 questions).
+
+"Would you prefer a quick check-in (about 10 questions) or a deeper dive (around 25)?"
+
+Wait for their choice. Do NOT ask anything else until they choose.
 
 ### If phase is "interviewing":
-Ask ONE question at a time. Each question must include a natural "for example" clause so the user knows what kind of answer to give.
+Ask ONE question at a time.
 
-Rotate through these categories:
-- **commute**: How they get around and daily distance. For example: "Do you drive, take the bus, or cycle?"
-- **travel**: Flights per year and type. For example: "Do you fly short haul or long haul?"
-- **home**: Energy type and household size. For example: "Do you use gas, electric, or renewable energy?"
-- **diet**: Eating habits. For example: "Are you a meat-eater, vegetarian, or vegan?"
-- **shopping**: Consumption frequency and buying habits. For example: "Do you buy things minimally, or shop frequently?"
+**MANDATORY QUESTION CHECKLIST — you MUST ask ALL of these. Do not skip any.**
 
-Spend roughly equal questions per category ({max_questions // 5} each).
+For QUICK mode, ask at least these core questions ONE AT A TIME:
+1. COMMUTE: Primary mode of transport for daily commute (car/bus/train/bike/walk)
+2. COMMUTE: Approximate daily round-trip distance in km or miles
+3. TRAVEL: Number of flights taken in the past year
+4. TRAVEL: Were those flights mostly short-haul or long-haul? (Only ask if they took flights)
+5. TRAVEL: Longest trip in the past year and how they got there
+6. HOME: Primary heating/energy source (gas/electric/renewable/heat pump)
+7. HOME: Number of people in household
+8. HOME: Rough monthly energy bill
+9. DIET: General diet type (meat-heavy, balanced, pescatarian, vegetarian, vegan)
+10. DIET: How often do you eat red meat specifically? (CRITICAL: DO NOT ask this if they are vegan or vegetarian. Use common sense to branch based on their diet type.)
+11. SHOPPING: How often they buy new clothes, electronics, or furniture (monthly, quarterly, rarely)
+12. SHOPPING: Do they tend to buy new or second-hand; repair or replace
 
-CRITICAL RULES:
-- Do NOT use emojis, decorative symbols, or special characters.
+For DETAILED mode, expand each category with deeper follow-ups (still strictly ONE AT A TIME):
+- COMMUTE: Add working-from-home frequency, car type/fuel, public transit frequency
+- TRAVEL: Add road trips, holiday frequency, offsetting awareness
+- HOME: Add insulation quality, appliance age, AC/heating hours, water heating
+- DIET: Add food waste frequency, local vs imported food, cooking vs takeout
+- SHOPPING: Add fast fashion vs quality, returns frequency, digital subscriptions
+
+**RULES:**
+- Ask them in the order above (commute → travel → home → diet → shopping)
+- Track which questions you've asked. Do NOT repeat a question.
+- Do NOT skip ahead. Do NOT combine questions. NEVER ask two things in the same message.
+- Each question should include a natural example so the user knows what kind of answer to give.
+- If the user gives a vague answer, ask ONE brief clarifying follow-up, then move on.
+- Do NOT use emojis or decorative symbols during the interview.
 - You are ONLY an interviewer. Do NOT calculate or call tools.
-- Do NOT summarize. Keep asking until the phase changes.
+- Do NOT summarize mid-interview.
 
 ### If phase is "summarizing":
 Present a complete analysis in three clear sections. You may use emojis naturally here based on the tone of the results.
 
 1. YOUR FOOTPRINT:
-   • Total: ___ tonnes CO₂e per year
-   • Breakdown by category (include estimated percentage of total):
+   - Total: ___ tonnes CO₂e per year
+   - Breakdown by category (include estimated percentage of total):
      - Commute: ___ kg (__%)
      - Travel: ___ kg (__%)
      - Home: ___ kg (__%)
      - Diet: ___ kg (__%)
      - Shopping: ___ kg (__%)
-   • How you compare to the global average of 4.7 tonnes
+   - How you compare to the global average of 4.7 tonnes
 
 2. WHAT THIS MEANS:
    Comment on the biggest contributor and what's working well.
@@ -122,7 +150,7 @@ Present a complete analysis in three clear sections. You may use emojis naturall
    For example, if they eat meat, suggest plant-based swaps; if they drive, suggest alternatives.
    Make each suggestion concrete and achievable.
 
-End with a warm, encouraging closing note.
+End with a warm, encouraging closing note. Use the user's name if they shared one.
 
 After presenting the analysis: call the `end_chat` tool with the total_tonnes, breakdown, and mode. This lets the user view their personal Edition.
 
@@ -139,7 +167,7 @@ async def before_interview(callback_context: CallbackContext) -> None:
     """
     state = callback_context.state
 
-    state.setdefault("phase", "mode_selection")
+    state.setdefault("phase", "greeting")
     state.setdefault("mode", "quick")
     state.setdefault("max_questions", INTERVIEW_MODES["quick"])
     state.setdefault("questions_asked", 0)
@@ -147,6 +175,8 @@ async def before_interview(callback_context: CallbackContext) -> None:
     state.setdefault("categories_covered", [CATEGORIES[0]])
     state.setdefault("extracted_data", {})
     state.setdefault("off_topic_count", 0)
+    state.setdefault("user_name", "")
+    state.setdefault("category_progress", {c: 0 for c in CATEGORIES})
 
     if callback_context.user_content and callback_context.user_content.parts:
         for part in callback_context.user_content.parts:
@@ -212,9 +242,26 @@ async def after_interview(callback_context: CallbackContext) -> None:
     the interview is complete.
     """
     state = callback_context.state
-    phase = state.get("phase", "mode_selection")
+    phase = state.get("phase", "greeting")
 
-    if phase == "mode_selection":
+    if phase == "greeting":
+        # After the greeting exchange, capture name and move to mode selection
+        user_text = ""
+        if callback_context.user_content and callback_context.user_content.parts:
+            for part in callback_context.user_content.parts:
+                if part.text:
+                    user_text += part.text.strip()
+
+        # Store name if provided (skip if they said skip/no/nothing)
+        skip_signals = ["skip", "no", "nothing", "nah", "pass", "n/a", "na"]
+        if user_text and not any(s in user_text.lower() for s in skip_signals):
+            # Take the first word or short phrase as name
+            name = user_text.split("\n")[0].strip().strip(".,!").split(" ")[0:3]
+            state["user_name"] = " ".join(name)
+
+        state["phase"] = "mode_selection"
+
+    elif phase == "mode_selection":
         user_text = ""
         if callback_context.user_content and callback_context.user_content.parts:
             for part in callback_context.user_content.parts:
@@ -226,7 +273,7 @@ async def after_interview(callback_context: CallbackContext) -> None:
                 state["mode"] = mode_name
                 state["max_questions"] = max_q
                 state["phase"] = "interviewing"
-                state["questions_asked"] = 1
+                state["questions_asked"] = 0
                 return
 
     elif phase == "interviewing":
@@ -234,19 +281,34 @@ async def after_interview(callback_context: CallbackContext) -> None:
         state["questions_asked"] = questions_asked
         max_q = state.get("max_questions", INTERVIEW_MODES["quick"])
 
-        # Advance category every N questions
-        questions_per_category = max_q // len(CATEGORIES)
-        current_idx = CATEGORIES.index(state.get("current_category", CATEGORIES[0]))
-        next_idx = min(questions_asked // questions_per_category, len(CATEGORIES) - 1)
-        if next_idx > current_idx:
-            state["current_category"] = CATEGORIES[next_idx]
-            covered = state.get("categories_covered", [])
-            if CATEGORIES[next_idx] not in covered:
-                covered.append(CATEGORIES[next_idx])
-                state["categories_covered"] = covered
+        # Track category progress — determine which category this question belongs to
+        questions_per_category = max(1, max_q // len(CATEGORIES))
+        current_idx = min(
+            (questions_asked - 1) // questions_per_category, len(CATEGORIES) - 1
+        )
+        current_cat = CATEGORIES[current_idx]
+        state["current_category"] = current_cat
 
+        # Update category progress counter
+        progress = state.get("category_progress", {c: 0 for c in CATEGORIES})
+        progress[current_cat] = progress.get(current_cat, 0) + 1
+        state["category_progress"] = progress
+
+        # Update categories covered
+        covered = state.get("categories_covered", [])
+        if current_cat not in covered:
+            covered.append(current_cat)
+            state["categories_covered"] = covered
+
+        # Only transition to summarizing when ALL questions asked AND all categories covered
         if questions_asked >= max_q:
-            state["phase"] = "summarizing"
+            uncovered = [c for c in CATEGORIES if progress.get(c, 0) == 0]
+            if uncovered:
+                # Extend interview to cover missed categories
+                state["max_questions"] = max_q + len(uncovered) * 2
+                state["current_category"] = uncovered[0]
+            else:
+                state["phase"] = "summarizing"
 
     elif phase == "summarizing":
         state["phase"] = "complete"

@@ -145,47 +145,22 @@ export default function DailyPage() {
         </div>
       </header>
 
-      {/* Main Content — responsive layout */}
+      {/* Main Content */}
       {viewMode === "tracking" && (
         <div className="flex-1 relative z-10">
-          <div className="max-w-6xl mx-auto px-6 py-8 lg:py-12">
-            {/* Mobile: title visible here */}
-            <h1 className="text-xl font-serif text-foreground mb-8 sm:hidden">
-              Daily Carbon Tracking
-            </h1>
+          {/* Hero heatmap — full width, no card container */}
+          <div className="max-w-3xl mx-auto px-6 pt-10 pb-4">
+            <ContributionGraph key={graphKey} />
+          </div>
 
-            {/* Desktop: side-by-side. Mobile: stacked */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-12">
-              {/* Left/Top: Daily Form */}
-              <section>
-                <div className="border border-border/50 bg-surface rounded-xl p-6 lg:p-8">
-                  <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
-                    Track Today
-                  </h2>
-                  <DailyForm onEntryCreated={handleEntryCreated} />
-                </div>
-              </section>
-
-              {/* Right/Bottom: Contribution Graph */}
-              <section>
-                <div className="border border-border/50 bg-surface rounded-xl p-6 lg:p-8">
-                  <h2 className="text-sm font-medium tracking-[0.15em] uppercase text-muted mb-6 font-sans">
-                    Your Carbon Story
-                  </h2>
-                  <ContributionGraph key={graphKey} />
-                </div>
-              </section>
-            </div>
-
-            {/* Footer link */}
-            <div className="mt-12 text-center">
-              <Link
-                href="/share"
-                className="text-xs font-sans text-muted hover:text-accent transition-colors"
-              >
-                Generate Report →
-              </Link>
-            </div>
+          {/* Footer link */}
+          <div className="mt-6 text-center pb-10">
+            <Link
+              href="/share"
+              className="text-xs font-sans text-muted hover:text-accent transition-colors"
+            >
+              Generate Report →
+            </Link>
           </div>
         </div>
       )}

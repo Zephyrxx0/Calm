@@ -285,21 +285,21 @@ export default function ChatInterface({
     : 0;
 
   return (
-    <div className="flex flex-1 flex-col max-w-2xl mx-auto w-full px-4">
+    <div className="flex flex-col h-full max-w-2xl mx-auto w-full px-4">
       {/* Messages */}
       {endChatData && dialogDismissed && (
-        <div className="fixed top-[69px] left-0 right-0 z-50 px-4 py-2.5 bg-background/90 backdrop-blur-sm border-b border-accent/15 flex items-center justify-between">
-          <span className="text-sm text-accent font-sans">Your Edition is ready</span>
+        <div className="flex-none z-10 px-6 py-4 bg-[#6A2323]/95 backdrop-blur-md border border-[#6A2323]/20 flex items-center justify-between gap-4 rounded-xl mt-4 shadow-lg w-full">
+          <span className="text-xl font-bold text-white font-serif tracking-wide">Your Edition is ready</span>
           <button
             onClick={() => setDialogDismissed(false)}
-            className="text-sm font-medium text-accent hover:underline underline-offset-2 transition-colors"
+            className="text-sm font-medium text-[#6A2323] bg-white hover:bg-white/90 px-5 py-2 rounded-lg transition-colors shadow-sm"
           >
-            View Results →
+            View Results
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto py-8 space-y-4">
+      <div className="flex-1 overflow-y-auto py-8 space-y-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {initialMessage && (
           <div className="flex justify-start">
             <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-surface px-5 py-3.5 shadow-sm ring-1 ring-border">
@@ -350,31 +350,33 @@ export default function ChatInterface({
       {/* Edition dialog */}
       {endChatData && !dialogDismissed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8 relative">
+          <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8 relative overflow-hidden">
+            {/* Decorative accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/60 via-accent to-accent/60" />
             <button
               onClick={() => setDialogDismissed(true)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface transition-colors"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface transition-colors text-muted hover:text-foreground"
               aria-label="Close"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <path d="M3 3L11 11M11 3L3 11" />
               </svg>
             </button>
-            <h2 className="text-xl font-serif text-foreground mb-2">
+            <h2 className="text-xl font-serif text-foreground mb-1 mt-2">
               Your Edition is Ready
             </h2>
             <p className="text-sm text-muted mb-6">
-              Your carbon footprint has been calculated. Here&apos;s a preview.
+              Your carbon footprint has been calculated.
             </p>
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-6 bg-surface/50 rounded-xl p-4 ring-1 ring-border/50">
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Total footprint</span>
-                <span className="font-medium text-foreground">
+                <span className="font-semibold text-foreground">
                   {endChatData.total_tonnes.toFixed(2)} tonnes CO₂e
                 </span>
               </div>
-              <div className="h-px bg-border" />
+              <div className="h-px bg-border/60" />
               {Object.entries(endChatData.breakdown).map(([cat, val]) => (
                 <div key={cat} className="flex justify-between text-sm">
                   <span className="text-muted capitalize">{cat}</span>
@@ -385,25 +387,42 @@ export default function ChatInterface({
               ))}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setEndChatData(null);
+                    router.push("/interview");
+                  }}
+                  className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:bg-surface transition-colors"
+                >
+                  Retake
+                </button>
+                <button
+                  onClick={() =>
+                    router.push(
+                      `/edition/${sessionId}?total=${endChatData.total_tonnes}&mode=${endChatData.mode}`
+                    )
+                  }
+                  className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors active:scale-[0.98]"
+                >
+                  View Full Edition
+                </button>
+              </div>
               <button
                 onClick={() => {
-                  setEndChatData(null);
-                  router.push("/interview");
+                  const content = messages.map(m => `${m.role === 'ai' ? 'CALM' : 'YOU'}:\n${m.text}`).join('\n\n');
+                  const blob = new Blob([content], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'calm_interview_export.txt';
+                  a.click();
+                  URL.revokeObjectURL(url);
                 }}
-                className="flex-1 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:bg-surface transition-colors"
+                className="w-full rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:bg-surface transition-colors"
               >
-                Retake Interview
-              </button>
-              <button
-                onClick={() =>
-                  router.push(
-                    `/edition/${sessionId}?total=${endChatData.total_tonnes}&mode=${endChatData.mode}`
-                  )
-                }
-                className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors active:scale-[0.98]"
-              >
-                Proceed to Edition
+                Export Convo
               </button>
             </div>
           </div>
@@ -411,7 +430,7 @@ export default function ChatInterface({
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-3 py-4 px-1">
+      <form onSubmit={handleSubmit} className="flex-none flex items-center gap-3 py-4 px-1">
         <input
           ref={inputRef}
           type="text"
