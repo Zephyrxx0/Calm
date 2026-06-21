@@ -23,6 +23,7 @@ export default function DailyPage() {
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [graphKey, setGraphKey] = useState(0);
+  const [timelineKey, setTimelineKey] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>("tracking");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [streakData, setStreakData] = useState<{
@@ -33,6 +34,7 @@ export default function DailyPage() {
 
   const handleEntryCreated = useCallback(() => {
     setGraphKey((k) => k + 1);
+    setTimelineKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
@@ -160,9 +162,9 @@ export default function DailyPage() {
             />
           </div>
 
-          {/* Activity Timeline */}
           <div className="max-w-2xl mx-auto px-6 pt-8 pb-4">
             <TimelineView
+              key={timelineKey}
               filterDate={selectedDate}
               onClearFilter={() => setSelectedDate(null)}
             />
