@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { AuthButton } from "@/components/auth/AuthButton";
 import { DailyForm } from "@/components/daily/DailyForm";
 import { ContributionGraph } from "@/components/daily/ContributionGraph";
+import { ActionDrawer } from "@/components/daily/ActionDrawer";
 import NewspaperLayout from "@/components/broadsheet/NewspaperLayout";
 import { DoodlePebbles } from "@/components/OrganicDoodles";
 import { Spinner } from "@/components/ui/spinner";
@@ -154,7 +155,7 @@ export default function DailyPage() {
           </div>
 
           {/* Footer link */}
-          <div className="mt-6 text-center pb-10">
+          <div className="mt-6 text-center pb-24">
             <Link
               href="/share"
               className="text-xs font-sans text-muted hover:text-accent transition-colors"
@@ -162,6 +163,9 @@ export default function DailyPage() {
               Generate Report →
             </Link>
           </div>
+
+          {/* Floating action drawer */}
+          <ActionDrawer onLogged={handleEntryCreated} />
         </div>
       )}
 
