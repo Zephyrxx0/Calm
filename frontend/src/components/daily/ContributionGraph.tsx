@@ -132,15 +132,9 @@ function VerticalLegend() {
 function MonthlyView({
   viewMonth,
   map,
-  onPrev,
-  onNext,
-  isNextDisabled,
 }: {
   viewMonth: Date;
   map: Map<string, number>;
-  onPrev: () => void;
-  onNext: () => void;
-  isNextDisabled: boolean;
 }) {
   const monthStart = startOfMonth(viewMonth);
   const monthEnd = endOfMonth(viewMonth);
@@ -150,27 +144,6 @@ function MonthlyView({
 
   return (
     <div className="flex-1 w-full">
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-6 max-w-xs mx-auto">
-        <button
-          onClick={onPrev}
-          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground"
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <h2 className="text-base font-serif text-foreground tracking-wide whitespace-nowrap px-4">
-          {format(viewMonth, "MMMM yyyy")}
-        </h2>
-        <button
-          onClick={onNext}
-          disabled={isNextDisabled}
-          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Next month"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
 
       {/* Day labels & cells (combined for perfect alignment) */}
       <div className="flex justify-center">
@@ -210,15 +183,9 @@ function MonthlyView({
 function YearlyView({
   viewYear,
   map,
-  onPrev,
-  onNext,
-  isNextDisabled,
 }: {
   viewYear: Date;
   map: Map<string, number>;
-  onPrev: () => void;
-  onNext: () => void;
-  isNextDisabled: boolean;
 }) {
   const yearStart = startOfYear(viewYear);
 
@@ -243,19 +210,6 @@ function YearlyView({
 
   return (
     <div className="flex-1 min-w-0">
-      {/* Navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={onPrev} className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground" aria-label="Previous year">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <h2 className="text-base font-serif text-foreground tracking-wide">
-          {format(viewYear, "yyyy")}
-        </h2>
-        <button onClick={onNext} disabled={isNextDisabled} className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Next year">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
       {/* Month labels row */}
       <div className="relative h-4 mb-1 overflow-hidden">
         {monthPositions.map(({ label, col }) => {
@@ -410,23 +364,39 @@ export function ContributionGraph() {
         </div>
       </div>
 
+      {/* Unified Pagination Header */}
+      <div className="flex items-center justify-between mb-6 max-w-xs mx-auto">
+        <button
+          onClick={viewMode === "month" ? goMonthPrev : goYearPrev}
+          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground"
+          aria-label="Previous"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <h2 className="text-base font-serif text-foreground tracking-wide whitespace-nowrap px-4">
+          {viewMode === "month" ? format(viewMonth, "MMMM yyyy") : format(viewYear, "yyyy")}
+        </h2>
+        <button
+          onClick={viewMode === "month" ? goMonthNext : goYearNext}
+          disabled={viewMode === "month" ? isMonthNextDisabled : isYearNextDisabled}
+          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
       {/* Heatmap + vertical legend */}
       <div className="flex gap-4 items-center justify-center min-h-[380px]">
         {viewMode === "month" ? (
           <MonthlyView
             viewMonth={viewMonth}
             map={map}
-            onPrev={goMonthPrev}
-            onNext={goMonthNext}
-            isNextDisabled={isMonthNextDisabled}
           />
         ) : (
           <YearlyView
             viewYear={viewYear}
             map={map}
-            onPrev={goYearPrev}
-            onNext={goYearNext}
-            isNextDisabled={isYearNextDisabled}
           />
         )}
         <VerticalLegend />
