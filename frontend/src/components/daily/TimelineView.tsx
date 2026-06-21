@@ -270,20 +270,20 @@ function ActivityTimelineItem({ log }: { log: ActivityLog }) {
   return (
     <TimelineItem>
       {/* Vertical connecting line */}
-      <TimelineConnector className="bg-border/30" />
+      <TimelineConnector className="bg-foreground/30" />
 
       {/* Dot with activity icon */}
       <TimelineDot
-        className="border-border/40 bg-background"
-        style={{ "--timeline-dot-size": "1.625rem" } as React.CSSProperties}
+        className="border-foreground bg-foreground shadow-sm"
+        style={{ "--timeline-dot-size": "2rem" } as React.CSSProperties}
       >
         {log.activity_type === "quick_log" ? (
           <TransportIcon
             value={String(log.metadata.transport ?? "")}
-            className="w-3 h-3 text-muted"
+            className="w-4 h-4 text-background"
           />
         ) : (
-          <Icon className="w-3 h-3 text-muted" />
+          <Icon className="w-4 h-4 text-background" />
         )}
       </TimelineDot>
 
@@ -301,7 +301,7 @@ function ActivityTimelineItem({ log }: { log: ActivityLog }) {
               <p className="text-[9px] uppercase tracking-[0.18em] text-muted mb-1 font-sans">
                 {label}
               </p>
-              <p className="text-sm font-serif text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors duration-150">
+              <p className="text-lg font-serif font-bold text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors duration-150">
                 {title}
               </p>
             </div>
@@ -393,7 +393,12 @@ export function TimelineView() {
         if (!res.ok) throw new Error("fetch failed");
 
         const data: TimelinePage = await res.json();
-        setAllItems((prev) => [...prev, ...data.items]);
+        setAllItems((prev) => {
+          const newItems = data.items.filter(
+            (item) => !prev.some((p) => p.id === item.id)
+          );
+          return [...prev, ...newItems];
+        });
         setNextCursor(data.next_cursor);
       } catch {
         setError(true);
