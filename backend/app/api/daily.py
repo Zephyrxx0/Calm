@@ -440,11 +440,13 @@ async def get_activity_logs(
     db: AsyncSession = Depends(get_session),
     before_id: Optional[int] = None,
     limit: int = 20,
+    target_date: Optional[date] = None,
 ) -> TimelinePageResponse:
     """Return paginated individual activity logs for the timeline view.
 
     Cursor-based pagination: pass `before_id` to fetch items older than that
     activity log ID. Returns `next_cursor=None` when no more items exist.
+    Pass `target_date` (YYYY-MM-DD) to filter to a specific day.
     """
     limit = max(1, min(limit, 50))  # clamp to [1, 50]
 
@@ -455,6 +457,10 @@ async def get_activity_logs(
     )
     if before_id is not None:
         query = query.where(ActivityLog.id < before_id)
+    if target_date is not None:
+        query = query.where(
+            sqlfunc.date(ActivityLog.logged_at) == target_date
+        )
 
     # Fetch one extra to determine if there's a next page
     result = await db.execute(query.limit(limit + 1))

@@ -24,6 +24,7 @@ export default function DailyPage() {
   const [mounted, setMounted] = useState(false);
   const [graphKey, setGraphKey] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>("tracking");
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [streakData, setStreakData] = useState<{
     currentStreak: number;
     longestStreak: number;
@@ -152,12 +153,19 @@ export default function DailyPage() {
         <div className="flex-1 relative z-10">
           {/* Hero heatmap */}
           <div className="max-w-7xl mx-auto px-6 pt-10 pb-4">
-            <ContributionGraph key={graphKey} />
+            <ContributionGraph
+              key={graphKey}
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+            />
           </div>
 
           {/* Activity Timeline */}
           <div className="max-w-2xl mx-auto px-6 pt-8 pb-4">
-            <TimelineView />
+            <TimelineView
+              filterDate={selectedDate}
+              onClearFilter={() => setSelectedDate(null)}
+            />
           </div>
 
           {/* Footer link */}

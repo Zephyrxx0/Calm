@@ -42,11 +42,11 @@ type ViewMode = "month" | "year";
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const INTENSITY_COLORS: Record<number, string> = {
-  0: "#e8e6df",
-  1: "#e0cfc3",
-  2: "#d4b49e",
-  3: "#c99276",
-  4: "#c2856b",
+  0: "#EDEAE1",  // no entry — near page background
+  1: "#D9CBBA",  // very light warm
+  2: "#C4A07A",  // light terracotta
+  3: "#A66F3A",  // medium terracotta
+  4: "#7A4920",  // deep rich terracotta
 };
 
 const CONSCIOUSNESS_LABELS: Record<number, string> = {
@@ -67,28 +67,49 @@ function DayCell({
   intensity,
   isFutureDate,
   size = "md",
+  isSelected = false,
+  onClick,
 }: {
   date: Date;
   intensity: number;
   isFutureDate: boolean;
   size?: "sm" | "md" | "lg";
+  isSelected?: boolean;
+  onClick?: (dateStr: string) => void;
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
-  
+  const clickable = intensity > 0 && !isFutureDate && !!onClick;
+
   let sizeClass = "w-full aspect-square rounded-[3px]";
   if (size === "sm") sizeClass = "w-5 h-5 rounded-[3px]";
   if (size === "lg") sizeClass = "w-10 h-10 sm:w-11 sm:h-11 rounded-[4px]";
 
   return (
     <div
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
       title={title}
-      className={`${sizeClass} transition-all duration-150 cursor-default hover:ring-1 hover:ring-accent/50`}
+      onClick={clickable ? () => onClick(format(date, "yyyy-MM-dd")) : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") onClick(format(date, "yyyy-MM-dd"));
+            }
+          : undefined
+      }
+      className={`${sizeClass} transition-all duration-150 ${
+        clickable ? "cursor-pointer" : "cursor-default"
+      } hover:ring-1 hover:ring-accent/50`}
       style={{
-        backgroundColor: isFutureDate ? "#e8e6df" : INTENSITY_COLORS[Math.min(intensity, 4)],
+        backgroundColor: isFutureDate ? "#EDEAE1" : INTENSITY_COLORS[Math.min(intensity, 4)],
         opacity: isFutureDate ? 0.3 : 1,
-        outline: isFutureDate ? "1px solid rgba(26,26,26,0.03)" : "1px solid rgba(26,26,26,0.07)",
-        outlineOffset: "-1px",
+        outline: isSelected
+          ? "2px solid var(--color-foreground)"
+          : isFutureDate
+          ? "1px solid rgba(26,26,26,0.03)"
+          : "1px solid rgba(26,26,26,0.09)",
+        outlineOffset: isSelected ? "1px" : "-1px",
       }}
     />
   );
@@ -132,9 +153,13 @@ function VerticalLegend() {
 function MonthlyView({
   viewMonth,
   map,
+  selectedDate,
+  onDateSelect,
 }: {
   viewMonth: Date;
   map: Map<string, number>;
+  selectedDate?: string | null;
+  onDateSelect?: (date: string) => void;
 }) {
   const monthStart = startOfMonth(viewMonth);
   const monthEnd = endOfMonth(viewMonth);
@@ -168,6 +193,8 @@ function MonthlyView({
                   intensity={map.get(dateStr) ?? 0}
                   isFutureDate={isFuture(day)}
                   size="lg"
+                  isSelected={selectedDate === dateStr}
+                  onClick={onDateSelect}
                 />
               </div>
             );
@@ -183,19 +210,21 @@ function MonthlyView({
 function YearlyView({
   viewYear,
   map,
+  selectedDate,
+  onDateSelect,
 }: {
   viewYear: Date;
   map: Map<string, number>;
+  selectedDate?: string | null;
+  onDateSelect?: (date: string) => void;
 }) {
   const yearStart = startOfYear(viewYear);
 
-  // Build week columns: each column is one week (Sun–Sat)
   const weeks = eachWeekOfInterval(
     { start: yearStart, end: new Date(viewYear.getFullYear(), 11, 31) },
     { weekStartsOn: 0 }
   );
 
-  // Month label positions: track which column each month first appears in
   const monthPositions: { label: string; col: number }[] = [];
   let lastMonth = -1;
   weeks.forEach((weekStart, colIdx) => {
@@ -253,6 +282,8 @@ function YearlyView({
                     intensity={map.get(dateStr) ?? 0}
                     isFutureDate={isFuture(day)}
                     size="sm"
+                    isSelected={selectedDate === dateStr}
+                    onClick={onDateSelect}
                   />
                 </div>
               );
@@ -289,7 +320,13 @@ function StatsBar({ data }: { data: StreakStats }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function ContributionGraph() {
+export function ContributionGraph({
+  selectedDate,
+  onDateSelect,
+}: {
+  selectedDate?: string | null;
+  onDateSelect?: (date: string | null) => void;
+}) {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<StreakStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -343,6 +380,11 @@ export function ContributionGraph() {
 
   const map = valueMap();
 
+  // Toggle: clicking an already-selected date clears the filter
+  const handleDateClick = (dateStr: string) => {
+    onDateSelect?.(selectedDate === dateStr ? null : dateStr);
+  };
+
   return (
     <div className="w-full font-sans">
       {/* View toggle */}
@@ -392,11 +434,15 @@ export function ContributionGraph() {
           <MonthlyView
             viewMonth={viewMonth}
             map={map}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateClick}
           />
         ) : (
           <YearlyView
             viewYear={viewYear}
             map={map}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateClick}
           />
         )}
         <VerticalLegend />

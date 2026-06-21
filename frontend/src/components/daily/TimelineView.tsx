@@ -20,6 +20,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  X,
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -363,9 +364,15 @@ function ActivityTimelineItem({ log }: { log: ActivityLog }) {
   );
 }
 
-// ─── Main TimelineView ──────────────────────────────────────────────────────
+// ─── Main TimelineView ───────────────────────────────────────────────────
 
-export function TimelineView() {
+export function TimelineView({
+  filterDate,
+  onClearFilter,
+}: {
+  filterDate?: string | null;
+  onClearFilter?: () => void;
+}) {
   const { user } = useAuth();
   const [allItems, setAllItems] = useState<ActivityLog[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null | undefined>(undefined);
@@ -387,6 +394,7 @@ export function TimelineView() {
         const token = await user.getIdToken();
         const params = new URLSearchParams({ limit: "20" });
         if (cursor !== undefined) params.set("before_id", String(cursor));
+        if (filterDate) params.set("target_date", filterDate);
 
         const res = await fetch(`/api/daily/logs?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -410,8 +418,16 @@ export function TimelineView() {
         fetchingRef.current = false;
       }
     },
-    [user]
+    [user, filterDate]
   );
+
+  // Reset when filterDate changes
+  useEffect(() => {
+    setAllItems([]);
+    seenIdsRef.current = new Set();
+    setNextCursor(undefined);
+    fetchingRef.current = false;
+  }, [filterDate]);
 
   // Initial load on mount
   useEffect(() => {
@@ -465,7 +481,19 @@ export function TimelineView() {
     <section aria-label="Activity timeline" className="w-full">
       {/* Section header — broadsheet style */}
       <div className="flex items-baseline justify-between mb-8 pb-3 border-b border-border/40">
-        <h2 className="text-base font-serif text-foreground tracking-wide">Activity Log</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-base font-serif text-foreground tracking-wide">Activity Log</h2>
+          {/* Active date filter pill */}
+          {filterDate && (
+            <button
+              onClick={onClearFilter}
+              className="flex items-center gap-1 px-2 py-0.5 rounded border border-foreground/20 bg-foreground/5 text-[9px] uppercase tracking-[0.15em] text-foreground hover:bg-foreground/10 transition-colors"
+            >
+              {format(parseISO(filterDate), "d MMM yyyy")}
+              <X className="w-2.5 h-2.5" />
+            </button>
+          )}
+        </div>
         {allItems.length > 0 && (
           <span className="text-[9px] uppercase tracking-[0.2em] text-muted">
             {allItems.length} entr{allItems.length === 1 ? "y" : "ies"}
