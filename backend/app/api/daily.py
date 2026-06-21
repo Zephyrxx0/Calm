@@ -387,23 +387,9 @@ async def get_streak_data(
     )
     summaries = result.scalars().all()
 
-    # Build score map from new daily_summaries
     entry_dates: dict[date, int] = {
         s.date: s.aggregate_consciousness for s in summaries
     }
-
-    # Also merge legacy daily_entries so existing data isn't lost
-    from app.models.daily_entry import DailyEntry
-    legacy_result = await db.execute(
-        select(DailyEntry)
-        .where(DailyEntry.firebase_uid == firebase_uid)
-        .order_by(DailyEntry.date)
-    )
-    legacy_entries = legacy_result.scalars().all()
-    for e in legacy_entries:
-        if e.date not in entry_dates:
-            entry_dates[e.date] = min(e.carbon_consciousness, 4)
-
     all_dates = sorted(entry_dates.keys())
 
 

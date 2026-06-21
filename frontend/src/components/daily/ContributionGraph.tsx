@@ -12,10 +12,18 @@ import {
   addMonths,
   isSameMonth,
   isFuture,
+  startOfYear,
+  subYears,
+  eachWeekOfInterval,
+  startOfWeek,
+  endOfWeek,
+  getMonth,
 } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface StreakEntry {
   date: string;
@@ -29,13 +37,16 @@ interface StreakStats {
   entries: StreakEntry[];
 }
 
-// 5 intensity levels from muted to accent
+type ViewMode = "month" | "year";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
 const INTENSITY_COLORS: Record<number, string> = {
-  0: "#e8e6df",  // empty — very light warm grey
+  0: "#e8e6df",
   1: "#e0cfc3",
   2: "#d4b49e",
   3: "#c99276",
-  4: "#c2856b",  // full accent
+  4: "#c2856b",
 };
 
 const CONSCIOUSNESS_LABELS: Record<number, string> = {
@@ -47,47 +58,281 @@ const CONSCIOUSNESS_LABELS: Record<number, string> = {
 };
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// ─── Shared cell component ───────────────────────────────────────────────────
 
 function DayCell({
   date,
   intensity,
   isFutureDate,
+  size = "md",
 }: {
   date: Date;
   intensity: number;
   isFutureDate: boolean;
+  size?: "sm" | "md";
 }) {
   const label = CONSCIOUSNESS_LABELS[Math.min(intensity, 4)] ?? "No entry";
   const title = `${format(date, "MMM d, yyyy")} — ${intensity > 0 ? label : "No entry"}`;
+  const sizeClass = size === "sm" ? "w-2.5 h-2.5 rounded-[2px]" : "w-full aspect-square rounded-[3px]";
 
   return (
     <div
       title={title}
-      className="w-full aspect-square rounded-[3px] transition-all duration-150 cursor-default"
+      className={`${sizeClass} transition-all duration-150 cursor-default hover:ring-1 hover:ring-accent/50`}
       style={{
-        backgroundColor: isFutureDate
-          ? "transparent"
-          : INTENSITY_COLORS[Math.min(intensity, 4)],
-        opacity: isFutureDate ? 0.2 : 1,
-        outline: "1px solid rgba(26,26,26,0.07)",
+        backgroundColor: isFutureDate ? "transparent" : INTENSITY_COLORS[Math.min(intensity, 4)],
+        opacity: isFutureDate ? 0.15 : 1,
+        outline: isFutureDate ? "none" : "1px solid rgba(26,26,26,0.07)",
         outlineOffset: "-1px",
       }}
     />
   );
 }
 
+// ─── Vertical legend ─────────────────────────────────────────────────────────
+
+function VerticalLegend() {
+  return (
+    <div className="flex flex-col items-center gap-1.5 pt-5 shrink-0">
+      <span
+        className="text-[9px] tracking-[0.15em] uppercase text-muted/60 mb-0.5"
+        style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+      >
+        Less
+      </span>
+      {[4, 3, 2, 1, 0].map((level) => (
+        <div
+          key={level}
+          title={CONSCIOUSNESS_LABELS[level]}
+          className="w-4 h-4 rounded-[3px]"
+          style={{
+            backgroundColor: INTENSITY_COLORS[level],
+            outline: "1px solid rgba(26,26,26,0.09)",
+            outlineOffset: "-1px",
+          }}
+        />
+      ))}
+      <span
+        className="text-[9px] tracking-[0.15em] uppercase text-muted/60 mt-0.5"
+        style={{ writingMode: "vertical-rl" }}
+      >
+        More
+      </span>
+    </div>
+  );
+}
+
+// ─── Monthly view ────────────────────────────────────────────────────────────
+
+function MonthlyView({
+  viewMonth,
+  map,
+  onPrev,
+  onNext,
+  isNextDisabled,
+}: {
+  viewMonth: Date;
+  map: Map<string, number>;
+  onPrev: () => void;
+  onNext: () => void;
+  isNextDisabled: boolean;
+}) {
+  const monthStart = startOfMonth(viewMonth);
+  const monthEnd = endOfMonth(viewMonth);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const startWeekday = getDay(monthStart);
+  const emptyCells = Array.from({ length: startWeekday });
+
+  return (
+    <div className="flex-1">
+      {/* Navigation */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={onPrev}
+          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <h2 className="text-base font-serif text-foreground tracking-wide">
+          {format(viewMonth, "MMMM yyyy")}
+        </h2>
+        <button
+          onClick={onNext}
+          disabled={isNextDisabled}
+          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Next month"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Day labels */}
+      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
+        {DAY_LABELS.map((d) => (
+          <div key={d} className="text-center text-[9px] tracking-widest uppercase text-muted/60 pb-0.5">
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-1.5">
+        {emptyCells.map((_, i) => <div key={`e-${i}`} />)}
+        {days.map((day) => {
+          const dateStr = format(day, "yyyy-MM-dd");
+          return (
+            <DayCell
+              key={dateStr}
+              date={day}
+              intensity={map.get(dateStr) ?? 0}
+              isFutureDate={isFuture(day)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Yearly view ─────────────────────────────────────────────────────────────
+
+function YearlyView({
+  viewYear,
+  map,
+  onPrev,
+  onNext,
+  isNextDisabled,
+}: {
+  viewYear: Date;
+  map: Map<string, number>;
+  onPrev: () => void;
+  onNext: () => void;
+  isNextDisabled: boolean;
+}) {
+  const yearStart = startOfYear(viewYear);
+
+  // Build week columns: each column is one week (Sun–Sat)
+  const weeks = eachWeekOfInterval(
+    { start: yearStart, end: new Date(viewYear.getFullYear(), 11, 31) },
+    { weekStartsOn: 0 }
+  );
+
+  // Month label positions: track which column each month first appears in
+  const monthPositions: { label: string; col: number }[] = [];
+  let lastMonth = -1;
+  weeks.forEach((weekStart, colIdx) => {
+    const m = getMonth(weekStart);
+    if (m !== lastMonth) {
+      monthPositions.push({ label: MONTH_LABELS[m], col: colIdx });
+      lastMonth = m;
+    }
+  });
+
+  return (
+    <div className="flex-1 min-w-0">
+      {/* Navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={onPrev} className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground" aria-label="Previous year">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <h2 className="text-base font-serif text-foreground tracking-wide">
+          {format(viewYear, "yyyy")}
+        </h2>
+        <button onClick={onNext} disabled={isNextDisabled} className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Next year">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Month labels row */}
+      <div className="relative h-4 mb-1 overflow-hidden">
+        {monthPositions.map(({ label, col }) => (
+          <span
+            key={label}
+            className="absolute text-[9px] tracking-wider uppercase text-muted/70"
+            style={{ left: `${(col / weeks.length) * 100}%` }}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+
+      {/* Grid: 7 rows (days) × N columns (weeks), scrollable on small screens */}
+      <div className="overflow-x-auto pb-1">
+        <div
+          className="grid gap-[3px]"
+          style={{
+            gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))`,
+            gridTemplateRows: "repeat(7, auto)",
+            gridAutoFlow: "column",
+            width: `${weeks.length * 14}px`,
+          }}
+        >
+          {weeks.map((weekStart) => {
+            const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
+            const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+            return days.map((day) => {
+              const dateStr = format(day, "yyyy-MM-dd");
+              const inYear = day.getFullYear() === viewYear.getFullYear();
+              return (
+                <div key={dateStr} className="w-2.5 h-2.5">
+                  {inYear ? (
+                    <DayCell
+                      date={day}
+                      intensity={map.get(dateStr) ?? 0}
+                      isFutureDate={isFuture(day)}
+                      size="sm"
+                    />
+                  ) : (
+                    <div className="w-2.5 h-2.5" />
+                  )}
+                </div>
+              );
+            });
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Stats bar ───────────────────────────────────────────────────────────────
+
+function StatsBar({ data }: { data: StreakStats }) {
+  return (
+    <div className="flex items-center justify-center gap-10 mt-8 pt-6 border-t border-border/40">
+      <div className="text-center">
+        <p className="text-3xl font-serif text-foreground leading-none">{data.current_streak}</p>
+        <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">Current Streak</p>
+      </div>
+      <div className="w-px h-10 bg-border" aria-hidden="true" />
+      <div className="text-center">
+        <p className="text-3xl font-serif text-foreground leading-none">{data.longest_streak}</p>
+        <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">Longest Streak</p>
+      </div>
+      <div className="w-px h-10 bg-border" aria-hidden="true" />
+      <div className="text-center">
+        <p className="text-3xl font-serif text-foreground leading-none">{data.total_days}</p>
+        <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">Total Days</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export function ContributionGraph() {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<StreakStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
   const [viewMonth, setViewMonth] = useState(new Date());
+  const [viewYear, setViewYear] = useState(new Date());
 
   useEffect(() => {
-    if (authLoading || !user) {
-      setLoading(false);
-      return;
-    }
-
+    if (authLoading || !user) { setLoading(false); return; }
     let cancelled = false;
     async function fetchStreak() {
       try {
@@ -98,165 +343,85 @@ export function ContributionGraph() {
         if (!res.ok) throw new Error();
         const json: StreakStats = await res.json();
         if (!cancelled) setData(json);
-      } catch {
-        /* fail silently */
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      } catch { /* silent */ }
+      finally { if (!cancelled) setLoading(false); }
     }
-
     fetchStreak();
     return () => { cancelled = true; };
   }, [user, authLoading]);
 
-  const valueMap = useCallback(() => {
-    if (!data?.entries) return new Map<string, number>();
+  const valueMap = useCallback((): Map<string, number> => {
+    if (!data?.entries) return new Map();
     return new Map(data.entries.map((e) => [e.date, e.carbon_consciousness]));
   }, [data]);
 
-  const goToPrev = () => setViewMonth((m) => subMonths(m, 1));
-  const goToNext = () => {
+  // Month nav
+  const goMonthPrev = () => setViewMonth((m) => subMonths(m, 1));
+  const goMonthNext = () => {
     const next = addMonths(viewMonth, 1);
-    if (!isFuture(startOfMonth(next)) || isSameMonth(next, new Date())) {
-      setViewMonth(next);
-    }
+    if (!isFuture(startOfMonth(next)) || isSameMonth(next, new Date())) setViewMonth(next);
   };
+  const isMonthNextDisabled = isSameMonth(viewMonth, new Date());
 
-  const isNextDisabled = isSameMonth(viewMonth, new Date());
+  // Year nav
+  const goYearPrev = () => setViewYear((y) => subYears(y, 1));
+  const goYearNext = () => {
+    const next = new Date(viewYear.getFullYear() + 1, 0, 1);
+    if (next.getFullYear() <= new Date().getFullYear()) setViewYear(next);
+  };
+  const isYearNextDisabled = viewYear.getFullYear() >= new Date().getFullYear();
 
   if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Spinner className="h-6 w-6 text-accent" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-24"><Spinner className="h-6 w-6 text-accent" /></div>;
   }
-
-  // Build the monthly grid
-  const monthStart = startOfMonth(viewMonth);
-  const monthEnd = endOfMonth(viewMonth);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  // Leading empty cells so the first day lands on the right weekday column
-  const startWeekday = getDay(monthStart); // 0 = Sunday
-  const emptyCells = Array.from({ length: startWeekday });
 
   const map = valueMap();
 
   return (
     <div className="w-full font-sans">
-      {/* Month header + navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={goToPrev}
-          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground"
-          aria-label="Previous month"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <h2 className="text-base font-serif text-foreground tracking-wide">
-          {format(viewMonth, "MMMM yyyy")}
-        </h2>
-        <button
-          onClick={goToNext}
-          disabled={isNextDisabled}
-          className="p-2 rounded-lg hover:bg-border/50 transition-colors text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="Next month"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Heatmap + vertical legend side-by-side */}
-      <div className="flex gap-4 items-start">
-        {/* Calendar grid */}
-        <div className="flex-1">
-          {/* Day-of-week labels */}
-          <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-            {DAY_LABELS.map((d) => (
-              <div
-                key={d}
-                className="text-center text-[9px] tracking-widest uppercase text-muted/60 pb-0.5"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Day cells */}
-          <div className="grid grid-cols-7 gap-1.5">
-            {emptyCells.map((_, i) => (
-              <div key={`empty-${i}`} />
-            ))}
-            {days.map((day) => {
-              const dateStr = format(day, "yyyy-MM-dd");
-              const intensity = map.get(dateStr) ?? 0;
-              return (
-                <DayCell
-                  key={dateStr}
-                  date={day}
-                  intensity={intensity}
-                  isFutureDate={isFuture(day)}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Vertical legend */}
-        <div className="flex flex-col items-center gap-1.5 pt-5 shrink-0">
-          <span className="text-[9px] tracking-[0.15em] uppercase text-muted/60 mb-0.5 -rotate-90 origin-center whitespace-nowrap" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "0.15em" }}>
-            Less
-          </span>
-          {[4, 3, 2, 1, 0].map((level) => (
-            <div
-              key={level}
-              title={CONSCIOUSNESS_LABELS[level]}
-              className="w-4 h-4 rounded-[3px]"
-              style={{
-                backgroundColor: INTENSITY_COLORS[level],
-                outline: "1px solid rgba(26,26,26,0.09)",
-                outlineOffset: "-1px",
-              }}
-            />
+      {/* View toggle */}
+      <div className="flex justify-end mb-5">
+        <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+          {(["month", "year"] as ViewMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-3 py-1.5 capitalize font-medium transition-colors ${
+                viewMode === mode
+                  ? "bg-foreground text-background"
+                  : "bg-surface text-muted hover:text-foreground"
+              }`}
+            >
+              {mode}
+            </button>
           ))}
-          <span className="text-[9px] tracking-[0.15em] uppercase text-muted/60 mt-0.5" style={{ writingMode: "vertical-rl", letterSpacing: "0.15em" }}>
-            More
-          </span>
         </div>
       </div>
 
-      {/* Streak stats below heatmap */}
-      {data && (
-        <div className="flex items-center justify-center gap-10 mt-8 pt-6 border-t border-border/40">
-          <div className="text-center">
-            <p className="text-3xl font-serif text-foreground leading-none">
-              {data.current_streak}
-            </p>
-            <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">
-              Current Streak
-            </p>
-          </div>
-          <div className="w-px h-10 bg-border" aria-hidden="true" />
-          <div className="text-center">
-            <p className="text-3xl font-serif text-foreground leading-none">
-              {data.longest_streak}
-            </p>
-            <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">
-              Longest Streak
-            </p>
-          </div>
-          <div className="w-px h-10 bg-border" aria-hidden="true" />
-          <div className="text-center">
-            <p className="text-3xl font-serif text-foreground leading-none">
-              {data.total_days}
-            </p>
-            <p className="text-[9px] tracking-[0.18em] uppercase text-muted mt-1.5">
-              Total Days
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Heatmap + vertical legend */}
+      <div className="flex gap-4 items-start">
+        {viewMode === "month" ? (
+          <MonthlyView
+            viewMonth={viewMonth}
+            map={map}
+            onPrev={goMonthPrev}
+            onNext={goMonthNext}
+            isNextDisabled={isMonthNextDisabled}
+          />
+        ) : (
+          <YearlyView
+            viewYear={viewYear}
+            map={map}
+            onPrev={goYearPrev}
+            onNext={goYearNext}
+            isNextDisabled={isYearNextDisabled}
+          />
+        )}
+        <VerticalLegend />
+      </div>
+
+      {/* Stats */}
+      {data && <StatsBar data={data} />}
     </div>
   );
 }
