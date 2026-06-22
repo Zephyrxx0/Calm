@@ -702,11 +702,7 @@ export {
   Timeline,
   TimelineConnector,
   TimelineContent,
-  TimelineDescription,
   TimelineDot,
-  TimelineHeader,
   TimelineItem,
   type TimelineProps,
-  TimelineTime,
-  TimelineTitle,
 };
