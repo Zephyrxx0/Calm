@@ -169,7 +169,7 @@ async def finalize_interview(
     """Persist interview session + messages + footprint to PostgreSQL.
 
     Called by the frontend when the calm-agent emits end_chat data.
-    Enables /edition/{session_id} to look up the session in the DB.
+    Enables /report/{session_id} to look up the session in the DB.
     """
     try:
         uid = uuid.UUID(session_id)

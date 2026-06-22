@@ -90,10 +90,10 @@ class TestChatEndpoint:
                 f"/api/interview/{session_id}/message",
                 json={"message": "I bike 5km to work"},
             )
-            # Verify message was stored — check via edition endpoint
-            edition_resp = await client.get(f"/api/edition/{session_id}")
-            edition_data = edition_resp.json()
-            messages = edition_data.get("messages", [])
+            # Verify message was stored — check via report endpoint
+            report_resp = await client.get(f"/api/report/{session_id}")
+            report_data = report_resp.json()
+            messages = report_data.get("messages", [])
             user_msgs = [m for m in messages if m["role"] == "user"]
             assert len(user_msgs) >= 1
             assert user_msgs[-1]["content"] == "I bike 5km to work"
@@ -109,12 +109,12 @@ class TestChatEndpoint:
         assert response.status_code == 404
 
 
-class TestEditionEndpoint:
-    """Test 2: GET /edition/{session_id} returns footprint, categories, and quotes."""
+class TestReportEndpoint:
+    """Test 2: GET /report/{session_id} returns footprint, categories, and quotes."""
 
     @pytest.mark.asyncio
-    async def test_edition_returns_footprint_data(self, client, session_id):
-        """GET /api/edition/{session_id} returns footprint and category breakdown."""
+    async def test_report_returns_footprint_data(self, client, session_id):
+        """GET /api/report/{session_id} returns footprint and category breakdown."""
         # Add some messages to the session so there's data to compute
         with patch("app.api.interview.get_ai_coach") as mock_get_coach:
             mock_coach = AsyncMock()
@@ -130,7 +130,7 @@ class TestEditionEndpoint:
                 json={"message": "I'm vegan"},
             )
 
-        response = await client.get(f"/api/edition/{session_id}")
+        response = await client.get(f"/api/report/{session_id}")
         assert response.status_code == 200
         data = response.json()
         assert "footprint" in data
@@ -138,18 +138,18 @@ class TestEditionEndpoint:
         assert "breakdown" in data["footprint"]
 
     @pytest.mark.asyncio
-    async def test_edition_returns_messages(self, client, session_id):
-        """GET /api/edition/{session_id} includes conversation messages."""
-        response = await client.get(f"/api/edition/{session_id}")
+    async def test_report_returns_messages(self, client, session_id):
+        """GET /api/report/{session_id} includes conversation messages."""
+        response = await client.get(f"/api/report/{session_id}")
         assert response.status_code == 200
         data = response.json()
         assert "messages" in data
 
     @pytest.mark.asyncio
-    async def test_edition_invalid_session_returns_404(self, client):
-        """GET /edition with non-existent session returns 404."""
+    async def test_report_invalid_session_returns_404(self, client):
+        """GET /report with non-existent session returns 404."""
         fake_id = str(uuid.uuid4())
-        response = await client.get(f"/api/edition/{fake_id}")
+        response = await client.get(f"/api/report/{fake_id}")
         assert response.status_code == 404
 
 

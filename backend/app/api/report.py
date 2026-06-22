@@ -1,4 +1,4 @@
-"""Edition API — serves the personalized newspaper data for a completed interview."""
+"""Report API — serves the personalized carbon report data for a completed interview."""
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,13 +16,13 @@ from app.services.insights import InsightsService
 router = APIRouter()
 
 
-@router.get("/edition/{session_id}")
-async def get_edition(
+@router.get("/report/{session_id}")
+async def get_report(
     session_id: str,
     country: str = Query(default="Global", description="Country for benchmark comparison"),
     db: AsyncSession = Depends(get_session),
 ):
-    """Retrieve session data, compute footprint, and return Edition payload."""
+    """Retrieve session data, compute footprint, and return Report payload."""
     uid = uuid.UUID(session_id)
     result = await db.execute(
         select(InterviewSession)
