@@ -153,7 +153,7 @@ function VerticalLegend() {
 
 // ─── Monthly view ────────────────────────────────────────────────────────────
 
-function MonthlyView({
+export function MonthlyView({
   viewMonth,
   map,
   selectedDate,

@@ -421,6 +421,94 @@ def _count_to_intensity(count: int) -> int:
         return 3
     return 4
 
+@router.get("/analysis")
+async def get_daily_analysis(
+    target_date: Optional[date] = None,
+    firebase_uid: str = Depends(_require_uid),
+    db: AsyncSession = Depends(get_session),
+) -> dict:
+    """Generate a one-liner Gemini analysis of the activities logged on target_date (defaults to today)."""
+    if target_date is None:
+        target_date = date.today()
+
+    day_start = datetime.combine(target_date, datetime.min.time())
+    day_end = datetime.combine(target_date, datetime.max.time())
+
+    query = (
+        select(ActivityLog)
+        .where(ActivityLog.firebase_uid == firebase_uid)
+        .where(ActivityLog.logged_at >= day_start)
+        .where(ActivityLog.logged_at <= day_end)
+    )
+    result = await db.execute(query)
+    logs = result.scalars().all()
+
+    if not logs:
+        return {"analysis": "No carbon tracking activities recorded today yet."}
+
+    summary_parts = []
+    for log in logs:
+        t_type = log.activity_type
+        m = log.activity_metadata
+        score = log.consciousness_score
+        
+        if t_type == "quick_log":
+            parts = []
+            if m.get("transport"): parts.append(f"transport: {m['transport']}")
+            if m.get("meal"): parts.append(f"meal: {m['meal']}")
+            if m.get("energy"): parts.append(f"energy: {m['energy']}")
+            summary_parts.append(f"Quick Log ({', '.join(parts)}) [Score: {score}/5]")
+        elif t_type == "chat_reflection":
+            summary_parts.append(f"Reflection: '{m.get('excerpt', '')}' [Score: {score}/5]")
+        elif t_type == "receipt_scan":
+            summary_parts.append(f"Scanned receipt from {m.get('merchant', 'merchant')} listing: {', '.join(m.get('items', []))} [Score: {score}/5]")
+        elif t_type == "interview":
+            summary_parts.append(f"Completed initial carbon interview [Score: {score}/5]")
+            
+    summary_text = "; ".join(summary_parts)
+
+    import os
+    from google import genai
+    
+    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        avg_score = sum(l.consciousness_score for l in logs) / len(logs)
+        if avg_score >= 4.0:
+            return {"analysis": "You're making highly conscious environmental choices today. Keep it up!"}
+        elif avg_score >= 2.5:
+            return {"analysis": "A balanced day of carbon consciousness. Consider swapping high-emission travel options."}
+        else:
+            return {"analysis": "Your logged activities today show room for greener choices. Small steps add up!"}
+
+    try:
+        client = genai.Client(api_key=api_key)
+        prompt = f"""You are a supportive, calm environmental coach. 
+Write a constructive, single-sentence (1-liner) summary and feedback of the user's logged carbon activities for today.
+Focus on being encouraging, pointing out positive actions and gently noting areas for improvement if any. Keep it under 120 characters.
+
+Here is the log of their activities:
+{summary_text}
+
+Response must be ONLY the single sentence, plain text, no quotes, no markdown."""
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-lite",
+            contents=prompt,
+        )
+        analysis_text = response.text.strip()
+        if (analysis_text.startswith('"') and analysis_text.endswith('"')) or \
+           (analysis_text.startswith("'") and analysis_text.endswith("'")):
+            analysis_text = analysis_text[1:-1]
+        return {"analysis": analysis_text}
+    except Exception:
+        avg_score = sum(l.consciousness_score for l in logs) / len(logs)
+        if avg_score >= 4.0:
+            return {"analysis": "You're making highly conscious environmental choices today. Keep it up!"}
+        elif avg_score >= 2.5:
+            return {"analysis": "A balanced day of carbon consciousness. Consider swapping high-emission travel options."}
+        else:
+            return {"analysis": "Your logged activities today show room for greener choices. Small steps add up!"}
+
 
 @router.get("/logs", response_model=TimelinePageResponse)
 async def get_activity_logs(

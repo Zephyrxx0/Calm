@@ -119,15 +119,7 @@ export default function DailyPage() {
             />
           </div>
 
-          {/* Footer link */}
-          <div className="mt-6 text-center pb-24">
-            <Link
-              href="/share"
-              className="text-xs font-sans text-muted hover:text-accent transition-colors"
-            >
-              Generate Report →
-            </Link>
-          </div>
+
 
           {/* Floating action drawer */}
           <ActionDrawer onLogged={handleEntryCreated} />

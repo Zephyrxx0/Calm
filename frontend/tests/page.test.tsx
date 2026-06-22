@@ -1,6 +1,15 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import Page from "@/app/page";
+
+// Mock useAuth to simulate logged-in state so CTA renders as a link
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: { uid: "test-user" },
+    loading: false,
+    signInAnonymous: vi.fn(),
+  }),
+}));
 
 describe("Landing Page", () => {
   it("renders the project title and a Begin Your Interview CTA link", () => {

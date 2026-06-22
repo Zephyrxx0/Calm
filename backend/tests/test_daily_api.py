@@ -290,3 +290,81 @@ async def test_get_activity_logs_paginated_and_filtered(client, db_session):
     data_filtered = resp_filtered.json()
     assert len(data_filtered["items"]) == 1
     assert data_filtered["items"][0]["activity_type"] == "chat_reflection"
+
+
+@pytest.mark.asyncio
+async def test_get_daily_analysis_empty(client):
+    """GET /api/daily/analysis with no logs returns default message."""
+    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
+        resp = await client.get("/api/daily/analysis", headers=_AUTH_HEADERS)
+    assert resp.status_code == 200
+    assert "No carbon tracking activities recorded today" in resp.json()["analysis"]
+
+
+@pytest.mark.asyncio
+async def test_get_daily_analysis_with_logs(client, db_session):
+    """GET /api/daily/analysis returns Gemini feedback or fallback."""
+    db_session.add(User(firebase_uid="test_uid"))
+    await db_session.commit()
+
+    db_session.add(
+        ActivityLog(
+            firebase_uid="test_uid",
+            activity_type=ActivityType.QUICK_LOG,
+            consciousness_score=5,
+            activity_metadata={"transport": "bicycle", "meal": "vegan"},
+            logged_at=datetime.now(),
+        )
+    )
+    await db_session.commit()
+
+    with patch("app.api.daily.verify_firebase_token", _auth_mock()):
+        resp = await client.get("/api/daily/analysis", headers=_AUTH_HEADERS)
+
+    assert resp.status_code == 200
+    assert "analysis" in resp.json()
+    assert len(resp.json()["analysis"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_create_daily_snapshot_success(client, db_session):
+    """POST /api/snapshot/daily creates snapshot successfully and stores data."""
+    db_session.add(User(firebase_uid="test_uid"))
+    await db_session.commit()
+
+    db_session.add(
+        ActivityLog(
+            firebase_uid="test_uid",
+            activity_type=ActivityType.QUICK_LOG,
+            consciousness_score=4,
+            activity_metadata={"transport": "ev"},
+            logged_at=datetime.now(),
+        )
+    )
+    await db_session.commit()
+
+    payload = {
+        "display_name": "Test User",
+        "analysis": "Test daily analysis summary sentence.",
+        "contributions": [
+            {"date": "2026-06-22", "carbon_consciousness": 2}
+        ]
+    }
+
+    with patch("app.api.snapshot.verify_firebase_token", _auth_mock()):
+        resp = await client.post("/api/snapshot/daily", json=payload, headers=_AUTH_HEADERS)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "snapshot_id" in data
+
+    get_resp = await client.get(f"/api/snapshot/{data['snapshot_id']}")
+    assert get_resp.status_code == 200
+    snap_payload = get_resp.json()
+    assert snap_payload["type"] == "daily"
+    assert snap_payload["display_name"] == "Test User"
+    assert snap_payload["analysis"] == "Test daily analysis summary sentence."
+    assert snap_payload["activities_count"] == 1
+    assert snap_payload["average_score"] == 4.0
+    assert snap_payload["contributions"][0]["carbon_consciousness"] == 2
+

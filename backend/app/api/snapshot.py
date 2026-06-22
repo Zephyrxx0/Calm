@@ -1,19 +1,21 @@
 """Snapshot API — create and retrieve static, shareable report snapshots."""
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Header
+from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth.firebase_auth import verify_firebase_token
 from app.database import get_session
-from app.models.daily_entry import DailyEntry
+
 from app.models.session import Session as InterviewSession
 from app.models.snapshot import Snapshot
 from app.models.user import User
+from app.models.activity_log import ActivityLog
 from app.services.benchmarks import BenchmarkService
 from app.services.carbon_model import CarbonModel
 from app.services.ai_coach import session_states
@@ -29,19 +31,27 @@ async def _compute_streak(
     firebase_uid: str, db: AsyncSession
 ) -> dict:
     """Compute current streak, longest streak, and total days for a user."""
+    day_col = func.date(ActivityLog.logged_at).label("day")
     result = await db.execute(
-        select(DailyEntry)
-        .where(DailyEntry.firebase_uid == firebase_uid)
-        .order_by(DailyEntry.date)
+        select(day_col, func.count(ActivityLog.id).label("cnt"))
+        .where(ActivityLog.firebase_uid == firebase_uid)
+        .group_by(day_col)
+        .order_by(day_col)
     )
-    entries = result.scalars().all()
-    entry_dates: dict[date, object] = {e.date: e for e in entries}
-    all_dates = sorted(entry_dates.keys())
+    
+    counts_by_date: dict[date, int] = {}
+    for row in result.all():
+        day_val = row.day
+        if isinstance(day_val, str):
+            day_val = date.fromisoformat(day_val)
+        counts_by_date[day_val] = row.cnt
+    
+    all_dates = sorted(counts_by_date.keys())
 
     # Current streak (consecutive days ending today)
     current_streak = 0
     check_date = date.today()
-    while check_date in entry_dates:
+    while check_date in counts_by_date:
         current_streak += 1
         check_date -= timedelta(days=1)
 
@@ -165,8 +175,9 @@ async def create_snapshot(
             },
         }
 
-    # -- Persist --
+    snap_id = uuid.uuid4()
     snapshot = Snapshot(
+        id=snap_id,
         session_id=uid,
         firebase_uid=firebase_uid,
         payload=payload,
@@ -174,7 +185,7 @@ async def create_snapshot(
     db.add(snapshot)
     await db.commit()
 
-    return {"snapshot_id": str(snapshot.id)}
+    return {"snapshot_id": str(snap_id)}
 
 
 @router.get("/snapshot/{snapshot_id}")
@@ -276,3 +287,69 @@ async def list_user_snapshots(
         "limit": limit,
         "items": items,
     }
+
+
+class DailySnapshotPayload(BaseModel):
+    display_name: str
+    analysis: str
+    contributions: list[dict]
+
+
+@router.post("/snapshot/daily")
+async def create_daily_snapshot(
+    payload: DailySnapshotPayload,
+    authorization: Optional[str] = Header(None),
+    db: AsyncSession = Depends(get_session),
+):
+    """Create a static snapshot of today's carbon tracker progress for sharing."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authentication required")
+        
+    token = authorization[len("Bearer "):]
+    try:
+        firebase_uid = await verify_firebase_token(token)
+    except HTTPException:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    today = date.today()
+    day_start = datetime.combine(today, datetime.min.time())
+    day_end = datetime.combine(today, datetime.max.time())
+    
+    query = (
+        select(ActivityLog)
+        .where(ActivityLog.firebase_uid == firebase_uid)
+        .where(ActivityLog.logged_at >= day_start)
+        .where(ActivityLog.logged_at <= day_end)
+    )
+    result = await db.execute(query)
+    logs = result.scalars().all()
+
+    avg_score = 0.0
+    if logs:
+        avg_score = sum(l.consciousness_score for l in logs) / len(logs)
+
+    streak = await _compute_streak(firebase_uid, db)
+
+    snapshot_payload = {
+        "type": "daily",
+        "date": today.isoformat(),
+        "display_name": payload.display_name,
+        "analysis": payload.analysis,
+        "activities_count": len(logs),
+        "average_score": round(avg_score, 1),
+        "streak_data": streak,
+        "contributions": payload.contributions
+    }
+
+    snap_id = uuid.uuid4()
+    snapshot = Snapshot(
+        id=snap_id,
+        session_id=None,
+        firebase_uid=firebase_uid,
+        payload=snapshot_payload,
+    )
+    db.add(snapshot)
+    await db.commit()
+
+    return {"snapshot_id": str(snap_id)}
+

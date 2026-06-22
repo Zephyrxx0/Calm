@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthButton } from "@/components/auth/AuthButton";
 import { DoodleLeaf } from "@/components/OrganicDoodles";
-import { MessageSquare, Calendar, Home } from "lucide-react";
+import { MessageSquare, Calendar, Home, Share2 } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export function Sidebar() {
   const links = [
     { href: "/interview", label: "The Interview", icon: MessageSquare },
     { href: "/daily", label: "Daily Tracking", icon: Calendar },
+    { href: "/share", label: "Share", icon: Share2 },
   ];
 
   return (

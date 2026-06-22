@@ -4,15 +4,30 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { OrganicBarChart } from "@/components/charts/OrganicBar";
 import NewspaperLayout from "@/components/broadsheet/NewspaperLayout";
+import { SharePreview } from "@/components/share/SharePreview";
+import { DoodlePebbles } from "@/components/OrganicDoodles";
 
 interface SnapshotData {
-  session_id: string;
-  footprint: {
+  type?: "daily";
+  date?: string;
+  display_name?: string;
+  analysis?: string;
+  activities_count?: number;
+  average_score?: number;
+  streak_data?: {
+    current_streak: number;
+    longest_streak: number;
+    total_days: number;
+  };
+  contributions?: Array<{ date: string; carbon_consciousness: number }>;
+
+  session_id?: string;
+  footprint?: {
     total_co2e: number;
     breakdown: Record<string, number>;
   };
-  messages: Array<{ role: string; content: string }>;
-  benchmarks: {
+  messages?: Array<{ role: string; content: string }>;
+  benchmarks?: {
     global: number;
     national: number;
     label: string;
@@ -77,8 +92,57 @@ export default function SharePage({
       </main>
     );
   }
+  if (data.type === "daily") {
+    return (
+      <main className="flex flex-col min-h-screen bg-background relative justify-center items-center p-6">
+        <div className="grain" aria-hidden="true" />
+        <DoodlePebbles className="absolute bottom-10 right-10 w-48 h-48 text-accent/5 pointer-events-none" />
+        <DoodlePebbles className="absolute top-1/3 -left-10 w-64 h-64 text-accent/5 pointer-events-none" />
+
+        <div className="flex flex-col items-center justify-center w-full max-w-md z-10 animate-fade-up">
+          <header className="text-center mb-6">
+            <p className="text-xs text-muted uppercase tracking-widest mb-2 font-sans font-medium">
+              Shared Tracking Summary
+            </p>
+            <h1 className="text-2xl font-serif text-foreground font-bold">
+              Carbon Consciousness Report
+            </h1>
+          </header>
+
+          <SharePreview
+            displayName={data.display_name || "User"}
+            dateStr={data.date}
+            analysis={data.analysis || ""}
+            activitiesCount={data.activities_count || 0}
+            averageScore={data.average_score || 0}
+            streakData={data.streak_data || { current_streak: 0, longest_streak: 0, total_days: 0 }}
+            contributions={data.contributions || []}
+          />
+
+          <div className="mt-8 text-center">
+            <p className="text-xs text-muted font-sans mb-3">
+              Curious about your own daily carbon footprint?
+            </p>
+            <Link
+              href="/"
+              className="inline-block rounded-lg bg-accent px-5 py-2 text-xs font-semibold text-white tracking-wide font-sans hover:bg-accent-hover transition-colors shadow-sm"
+            >
+              Start tracking with Calm
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const { footprint, benchmarks } = data;
+  if (!footprint || !benchmarks) {
+    return (
+      <main className="flex flex-1 items-center justify-center min-h-screen">
+        <p className="text-sm text-destructive">Invalid report data.</p>
+      </main>
+    );
+  }
   const totalTons = (footprint.total_co2e / 1000).toFixed(1);
 
   const chartData = Object.entries(footprint.breakdown).map(([name, co2e]) => ({

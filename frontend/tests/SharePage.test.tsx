@@ -17,6 +17,12 @@ vi.mock("next/link", () => ({
   default: ({ children, href }: any) => <a href={href}>{children}</a>,
 }));
 
+// Mock Firebase lib to prevent crashes during tests
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+}));
+
 describe("Share Page", () => {
   const mockSnapshotData = {
     session_id: "test-session",

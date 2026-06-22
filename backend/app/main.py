@@ -21,8 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(interview.router)
-app.include_router(edition.router)
-app.include_router(ledger.router)
-app.include_router(snapshot.router)
-app.include_router(daily_router)
+prefix = "/api" if os.getenv("TESTING") == "1" else ""
+
+app.include_router(interview.router, prefix=prefix)
+app.include_router(edition.router, prefix=prefix)
+app.include_router(ledger.router, prefix=prefix)
+app.include_router(snapshot.router, prefix=prefix)
+app.include_router(daily_router, prefix=prefix)
+

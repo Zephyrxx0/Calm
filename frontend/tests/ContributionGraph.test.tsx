@@ -16,13 +16,17 @@ vi.mock("react-calendar-heatmap", () => ({
 vi.mock("react-calendar-heatmap/dist/styles.css", () => ({}));
 
 // Mock date-fns
-vi.mock("date-fns", () => ({
-  subDays: vi.fn((date, days) => new Date()),
-  format: vi.fn(() => "Jan 1, 2026"),
-  parseISO: vi.fn((s) => new Date(s)),
-  startOfYear: vi.fn(() => new Date("2026-01-01")),
-  endOfYear: vi.fn(() => new Date("2026-12-31")),
-}));
+vi.mock("date-fns", async () => {
+  const actual = await vi.importActual("date-fns") as any;
+  return {
+    ...actual,
+    subDays: vi.fn(() => new Date()),
+    format: vi.fn(() => "Jan 1, 2026"),
+    parseISO: vi.fn((s) => new Date(s)),
+    startOfYear: vi.fn(() => new Date("2026-01-01")),
+    endOfYear: vi.fn(() => new Date("2026-12-31")),
+  };
+});
 
 // Mock useAuth
 const mockUseAuth = vi.fn();
