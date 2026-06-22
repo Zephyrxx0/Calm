@@ -13,11 +13,21 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost:5432/ca
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-# Supavisor transaction pooler requires prepared_statement_cache_size=0
+# Supabase transaction pooler (pgBouncer) does NOT support prepared statements.
+# Disable them at every level: URL query param, SQLAlchemy engine arg, and raw connect arg.
+if "?" in DATABASE_URL:
+    DATABASE_URL += "&statement_cache_size=0"
+else:
+    DATABASE_URL += "?statement_cache_size=0"
+
 engine = create_async_engine(
     DATABASE_URL,
     echo=False,
-    connect_args={"prepared_statement_cache_size": 0},
+    pool_pre_ping=True,
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    },
 )
 
 async_session_factory = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
