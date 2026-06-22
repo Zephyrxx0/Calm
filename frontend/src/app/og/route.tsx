@@ -3,15 +3,6 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-/**
- * GET /api/og — Universal social share card (1200×630)
- *
- * Query parameters:
- *   snapshotId      — UUID of the shared snapshot
- *   totalFootprint  — Carbon footprint in tonnes (e.g. "4.2")
- *   streakDays      — Current streak day count
- *   topCategory     — Name of highest-impact category
- */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const totalFootprint = searchParams.get("totalFootprint") || "";
@@ -35,7 +26,6 @@ export async function GET(request: NextRequest) {
           position: "relative",
         }}
       >
-        {/* Subtle texture overlay */}
         <div
           style={{
             position: "absolute",
@@ -46,7 +36,6 @@ export async function GET(request: NextRequest) {
           }}
         />
 
-        {/* Top row: branding */}
         <div
           style={{
             display: "flex",
@@ -68,7 +57,6 @@ export async function GET(request: NextRequest) {
           </div>
         </div>
 
-        {/* Middle: main content */}
         <div
           style={{
             display: "flex",
@@ -86,7 +74,6 @@ export async function GET(request: NextRequest) {
                 gap: "24px",
               }}
             >
-              {/* Footprint number */}
               <div
                 style={{
                   display: "flex",
@@ -131,7 +118,6 @@ export async function GET(request: NextRequest) {
                 </div>
               </div>
 
-              {/* Top category pill */}
               {topCategory && (
                 <div
                   style={{
@@ -157,7 +143,6 @@ export async function GET(request: NextRequest) {
                 </div>
               )}
 
-              {/* Streak */}
               {streakDays !== "0" && (
                 <div
                   style={{
@@ -174,7 +159,6 @@ export async function GET(request: NextRequest) {
               )}
             </div>
           ) : (
-            /* Fallback — no data */
             <div
               style={{
                 display: "flex",
@@ -208,7 +192,6 @@ export async function GET(request: NextRequest) {
           )}
         </div>
 
-        {/* Bottom: footer */}
         <div
           style={{
             display: "flex",

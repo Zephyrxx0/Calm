@@ -21,7 +21,7 @@ export default function InterviewPage() {
   useEffect(() => {
     async function startSession() {
       try {
-        const response = await fetch("/api/interview/start", {
+        const response = await fetch("/agent/start", {
           method: "POST",
         });
 
@@ -35,7 +35,7 @@ export default function InterviewPage() {
         sessionStorage.setItem("userId", data.user_id);
 
         // Fetch the greeting message so the bot speaks first
-        const greetRes = await fetch("/api/interview/message", {
+        const greetRes = await fetch("/agent/message", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

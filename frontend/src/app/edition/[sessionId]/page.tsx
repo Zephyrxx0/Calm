@@ -214,7 +214,7 @@ export default function SummaryPage({
         streakData?.currentStreak?.toString() ?? "0";
 
       const ogUrl = new URL(
-        `/api/og`,
+        `/og`,
         window.location.origin,
       );
       ogUrl.searchParams.set("snapshotId", sid ?? "");

@@ -1,4 +1,12 @@
+packages:
+  - 'frontend'
+
 allowBuilds:
-  better-sqlite3: false
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
+  core-js: set this to true or false
+  protobufjs: set this to true or false
+
+onlyBuiltDependencies:
+  - core-js
+  - protobufjs
+  - sharp
+  - unrs-resolver

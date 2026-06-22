@@ -63,7 +63,7 @@ export default function ChatInterface({
           headers["Authorization"] = `Bearer ${token}`;
         }
 
-        await fetch(`/api/interview/finalize/${sessionId}`, {
+        await fetch(`/api/interview/${sessionId}/finalize`, {
           method: "POST",
           headers,
           body: JSON.stringify({
@@ -169,7 +169,7 @@ export default function ChatInterface({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      const response = await fetch("/api/interview/message", {
+      const response = await fetch("/agent/message", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

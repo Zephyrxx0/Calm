@@ -1,4 +1,5 @@
 {
+	"private": true,
 	"dependencies": {
 		"@radix-ui/react-label": "^2.1.10",
 		"agentation-mcp": "^1.2.0"

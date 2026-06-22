@@ -26,7 +26,7 @@ from app.database import get_session
 from app.models.activity_log import ActivityLog, ActivityType
 from app.models.user import User
 
-router = APIRouter(prefix="/api/daily", tags=["daily"])
+router = APIRouter(prefix="/daily", tags=["daily"])
 
 
 # ---------------------------------------------------------------------------

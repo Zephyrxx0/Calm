@@ -1,5 +1,7 @@
 """Firebase Admin SDK token verification."""
+import json
 import os
+import tempfile
 
 import firebase_admin
 from firebase_admin import auth, credentials
@@ -12,13 +14,26 @@ def _ensure_initialized():
     global _app_initialized
     if _app_initialized:
         return
+    # 1. File path (local dev)
     creds_path = os.environ.get("FIREBASE_CREDENTIALS_PATH")
     if creds_path and os.path.exists(creds_path):
         cred = credentials.Certificate(creds_path)
         firebase_admin.initialize_app(cred)
-    else:
-        # Falls back to GOOGLE_APPLICATION_CREDENTIALS or GCP default creds
-        firebase_admin.initialize_app()
+        _app_initialized = True
+        return
+    # 2. JSON string env var (Vercel / serverless)
+    creds_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+    if creds_json:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write(creds_json)
+            tmp_path = f.name
+        cred = credentials.Certificate(tmp_path)
+        firebase_admin.initialize_app(cred)
+        os.unlink(tmp_path)
+        _app_initialized = True
+        return
+    # 3. Falls back to GOOGLE_APPLICATION_CREDENTIALS or GCP default creds
+    firebase_admin.initialize_app()
     _app_initialized = True
 
 
