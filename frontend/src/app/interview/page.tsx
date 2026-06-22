@@ -5,6 +5,8 @@ import ChatInterface from "@/components/chat/ChatInterface";
 import { DoodleLeaf, DoodleSun } from "@/components/OrganicDoodles";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthButton } from "@/components/auth/AuthButton";
+import { Sidebar } from "@/components/Sidebar";
+import Link from "next/link";
 
 function Grain() {
   return <div className="grain" aria-hidden="true" />;
@@ -113,43 +115,54 @@ export default function InterviewPage() {
   }
 
   return (
-    <main className="flex flex-col h-screen h-[100dvh] bg-background relative overflow-hidden">
+    <div className="flex h-screen h-[100dvh] bg-background relative overflow-hidden w-full">
       <Grain />
-      <DoodleLeaf className="absolute -top-10 -left-10 w-64 h-64 text-accent/5 rotate-[15deg] pointer-events-none" />
-      <DoodleSun className="absolute bottom-10 -right-20 w-80 h-80 text-accent/5 pointer-events-none" />
 
-      <header className="flex-none border-b border-border/50 px-6 py-5 relative z-50 bg-background/50 backdrop-blur-md">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <a
-            href="/"
-            className="text-lg font-serif text-foreground hover:text-accent transition-colors"
-          >
-            Calm
-          </a>
-          <p className="text-[10px] font-medium text-muted uppercase tracking-[0.2em]">
-            The Interview
-          </p>
-          <div className="flex items-center gap-4">
-            {sessionId && (
-              <a
-                href={`/ledger/${sessionId}`}
-                className="text-xs font-sans text-muted hover:text-foreground transition-colors"
-              >
-                Refine in Ledger →
-              </a>
-            )}
-            <AuthButton />
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 flex flex-col relative z-10 min-h-0 overflow-hidden">
-        <ChatInterface
-          sessionId={sessionId}
-          userId={userId}
-          initialMessage={initialMessage}
-        />
+      {/* Persistent Sidebar on Desktop */}
+      <div className="hidden md:block h-full shrink-0">
+        <Sidebar />
       </div>
-    </main>
+
+      {/* Main Content Pane */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+        <DoodleLeaf className="absolute -top-10 -left-10 w-64 h-64 text-accent/5 rotate-[15deg] pointer-events-none z-0" />
+        <DoodleSun className="absolute bottom-10 -right-20 w-80 h-80 text-accent/5 pointer-events-none z-0" />
+
+        {/* Mobile Header (Hidden on Desktop) */}
+        <header className="flex-none border-b border-border/50 px-6 py-4 md:hidden relative z-50 bg-background/50 backdrop-blur-md">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
+            <Link
+              href="/"
+              className="text-lg font-serif text-foreground hover:text-accent transition-colors"
+            >
+              Calm
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/interview"
+                className="text-[10px] font-medium text-accent-hover uppercase tracking-wider font-sans border-b border-accent-hover"
+              >
+                Interview
+              </Link>
+              <Link
+                href="/daily"
+                className="text-[10px] font-medium text-muted uppercase tracking-wider font-sans"
+              >
+                Daily
+              </Link>
+              <AuthButton />
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 flex flex-col relative z-10 min-h-0 overflow-hidden">
+          <ChatInterface
+            sessionId={sessionId}
+            userId={userId}
+            initialMessage={initialMessage}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

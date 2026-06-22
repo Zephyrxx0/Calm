@@ -7,30 +7,21 @@ import { DailyForm } from "@/components/daily/DailyForm";
 import { ContributionGraph } from "@/components/daily/ContributionGraph";
 import { ActionDrawer } from "@/components/daily/ActionDrawer";
 import { TimelineView } from "@/components/daily/TimelineView";
-import NewspaperLayout from "@/components/broadsheet/NewspaperLayout";
 import { DoodlePebbles } from "@/components/OrganicDoodles";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Sidebar } from "@/components/Sidebar";
 
 function Grain() {
   return <div className="grain" aria-hidden="true" />;
 }
-
-type ViewMode = "tracking" | "newspaper";
 
 export default function DailyPage() {
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [graphKey, setGraphKey] = useState(0);
   const [timelineKey, setTimelineKey] = useState(0);
-  const [viewMode, setViewMode] = useState<ViewMode>("tracking");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [streakData, setStreakData] = useState<{
-    currentStreak: number;
-    longestStreak: number;
-    totalDays: number;
-  } | null>(null);
 
   const handleEntryCreated = useCallback(() => {
     setGraphKey((k) => k + 1);
@@ -40,32 +31,6 @@ export default function DailyPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    async function fetchStreak() {
-      try {
-        const token = await user!.getIdToken();
-        const res = await fetch("/api/daily/streak", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!cancelled) {
-          setStreakData({
-            currentStreak: json.current_streak ?? 0,
-            longestStreak: json.longest_streak ?? 0,
-            totalDays: json.total_days ?? 0,
-          });
-        }
-      } catch {
-        // Streak data optional — fail silently
-      }
-    }
-    fetchStreak();
-    return () => { cancelled = true; };
-  }, [user]);
 
   // Auth guard: show loading while auth initializes
   if (authLoading || !mounted) {
@@ -95,64 +60,48 @@ export default function DailyPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col min-h-screen bg-background relative overflow-hidden">
+    <div className="flex h-screen h-[100dvh] bg-background relative overflow-hidden w-full">
       <Grain />
 
-      {/* Decorative Doodles */}
-      <DoodlePebbles className="absolute top-1/3 -left-10 w-64 h-64 text-accent/5 pointer-events-none" />
+      {/* Persistent Sidebar on Desktop */}
+      <div className="hidden md:block h-full shrink-0">
+        <Sidebar />
+      </div>
 
-      {/* Header */}
-      <header className="border-b border-border/50 px-6 py-5 relative z-10 bg-background/50 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Main Content Pane */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto relative">
+        {/* Decorative Doodles */}
+        <DoodlePebbles className="absolute top-1/3 -left-10 w-64 h-64 text-accent/5 pointer-events-none z-0" />
+
+        {/* Mobile Header (Hidden on Desktop) */}
+        <header className="flex-none border-b border-border/50 px-6 py-4 md:hidden relative z-50 bg-background/50 backdrop-blur-md">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
             <Link
               href="/"
               className="text-lg font-serif text-foreground hover:text-accent transition-colors"
             >
               Calm
             </Link>
-            <span className="text-[10px] font-medium text-muted uppercase tracking-[0.2em] hidden sm:inline">
-              Daily Carbon Tracking
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/interview"
-              className="text-xs font-sans text-muted hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-3 w-3 inline mr-1" />
-              Back to Interview
-            </Link>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <button
-                onClick={() => setViewMode("tracking")}
-                className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-                  viewMode === "tracking"
-                    ? "bg-accent text-white"
-                    : "bg-surface text-muted hover:text-foreground"
-                }`}
+            <div className="flex items-center gap-4">
+              <Link
+                href="/interview"
+                className="text-[10px] font-medium text-muted uppercase tracking-wider font-sans"
               >
-                Tracking
-              </button>
-              <button
-                onClick={() => setViewMode("newspaper")}
-                className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-                  viewMode === "newspaper"
-                    ? "bg-accent text-white"
-                    : "bg-surface text-muted hover:text-foreground"
-                }`}
+                Interview
+              </Link>
+              <Link
+                href="/daily"
+                className="text-[10px] font-medium text-accent-hover uppercase tracking-wider font-sans border-b border-accent-hover"
               >
-                View as Newspaper
-              </button>
+                Daily
+              </Link>
+              <AuthButton />
             </div>
-            <AuthButton />
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      {viewMode === "tracking" && (
-        <div className="flex-1 relative z-10">
+        {/* Main Content */}
+        <div className="flex-1 relative z-10 w-full">
           {/* Hero heatmap */}
           <div className="max-w-7xl mx-auto px-6 pt-10 pb-4">
             <ContributionGraph
@@ -183,21 +132,7 @@ export default function DailyPage() {
           {/* Floating action drawer */}
           <ActionDrawer onLogged={handleEntryCreated} />
         </div>
-      )}
-
-      {/* Newspaper view */}
-      {viewMode === "newspaper" && (
-        <div className="flex-1 overflow-auto bg-[#fafaf8]">
-          <NewspaperLayout
-            title="Your Daily Carbon Story"
-            subtitle="A snapshot of your tracking progress"
-            footprint={0}
-            categoryBreakdown={[]}
-            streakData={streakData}
-            pullQuotes={undefined}
-          />
-        </div>
-      )}
-    </main>
+      </div>
+    </div>
   );
 }
