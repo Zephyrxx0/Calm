@@ -19,12 +19,12 @@ function Grain() {
 export default function DailyPage() {
   const { user, loading: authLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const [graphKey, setGraphKey] = useState(0);
+  const [refreshToken, setRefreshToken] = useState(0);
   const [timelineKey, setTimelineKey] = useState(0);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const handleEntryCreated = useCallback(() => {
-    setGraphKey((k) => k + 1);
+    setRefreshToken((k) => k + 1);
     setTimelineKey((k) => k + 1);
   }, []);
 
@@ -105,7 +105,7 @@ export default function DailyPage() {
           {/* Hero heatmap */}
           <div className="max-w-7xl mx-auto px-6 pt-10 pb-4">
             <ContributionGraph
-              key={graphKey}
+              refreshToken={refreshToken}
               selectedDate={selectedDate}
               onDateSelect={setSelectedDate}
             />

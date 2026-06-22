@@ -63,6 +63,14 @@ const ACTIVITY_LABELS: Record<number, string> = {
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+// Format a Date as "yyyy-MM-dd" in UTC — matches the API's UTC date grouping.
+function formatDateUTC(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 // ─── Shared cell component ───────────────────────────────────────────────────
 
 function DayCell({
@@ -93,11 +101,11 @@ function DayCell({
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
       title={title}
-      onClick={clickable ? () => onClick(format(date, "yyyy-MM-dd")) : undefined}
+      onClick={clickable ? () => onClick(formatDateUTC(date)) : undefined}
       onKeyDown={
         clickable
           ? (e) => {
-              if (e.key === "Enter" || e.key === " ") onClick(format(date, "yyyy-MM-dd"));
+              if (e.key === "Enter" || e.key === " ") onClick(formatDateUTC(date));
             }
           : undefined
       }
@@ -188,7 +196,7 @@ export function MonthlyView({
           
           {/* Actual days */}
           {days.map((day) => {
-            const dateStr = format(day, "yyyy-MM-dd");
+            const dateStr = formatDateUTC(day);
             return (
               <div key={dateStr}>
                 <DayCell
@@ -277,7 +285,7 @@ function YearlyView({
             const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             return days.map((day) => {
-              const dateStr = format(day, "yyyy-MM-dd");
+              const dateStr = formatDateUTC(day);
               return (
                 <div key={dateStr}>
                   <DayCell
@@ -326,9 +334,11 @@ function StatsBar({ data }: { data: StreakStats }) {
 export function ContributionGraph({
   selectedDate,
   onDateSelect,
+  refreshToken,
 }: {
   selectedDate?: string | null;
   onDateSelect?: (date: string | null) => void;
+  refreshToken?: number;
 }) {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<StreakStats | null>(null);
@@ -345,6 +355,7 @@ export function ContributionGraph({
         const token = await user!.getIdToken();
         const res = await fetch("/api/daily/streak", {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         });
         if (!res.ok) throw new Error();
         const json: StreakStats = await res.json();
@@ -354,7 +365,7 @@ export function ContributionGraph({
     }
     fetchStreak();
     return () => { cancelled = true; };
-  }, [user, authLoading]);
+  }, [user, authLoading, refreshToken]);
 
   const valueMap = useCallback((): Map<string, number> => {
     if (!data?.entries) return new Map();
