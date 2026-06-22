@@ -21,7 +21,10 @@ function Nav() {
   return (
     <nav className="fixed top-6 left-6 right-6 md:left-1/2 md:right-auto md:-translate-x-1/2 z-40">
       <div className="flex items-center justify-between md:justify-start md:gap-12 rounded-full bg-white/40 backdrop-blur-3xl border border-white/30 px-8 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
-        <span className="text-base font-medium text-white font-serif text-xl tracking-[-0.01em]">Calm</span>
+        <div className="flex items-center gap-2">
+          <img src="/icon.svg" alt="Calm" className="w-6 h-6" />
+          <span className="text-base font-medium text-white font-serif text-xl tracking-[-0.01em]">Calm</span>
+        </div>
         <div className="hidden md:flex items-center gap-10">
           <a
             href="#manifesto"

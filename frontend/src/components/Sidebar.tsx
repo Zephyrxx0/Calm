@@ -25,6 +25,9 @@ export function Sidebar() {
       <div className="relative z-10 flex flex-col h-full">
         {/* Brand Header */}
         <div className="p-6 pb-2">
+          <Link href="/" className="inline-block mb-1">
+            <img src="/icon.svg" alt="Calm" className="w-8 h-8" />
+          </Link>
           <Link
             href="/"
             className="text-3xl font-serif tracking-tight text-foreground hover:text-accent transition-colors block"

@@ -42,6 +42,9 @@ export const metadata: Metadata = {
   title: "Calm — Your Carbon Footprint",
   description:
     "A quiet space to understand your carbon footprint. Answer a few gentle questions, and see your impact clearly.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
