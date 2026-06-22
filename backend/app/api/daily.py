@@ -370,9 +370,13 @@ async def get_streak_data(
         counts_by_date[day_val] = row.cnt
     all_dates = sorted(counts_by_date.keys())
 
-    # Current streak (consecutive days ending today)
+    # Use UTC throughout — Supabase stores timestamps in UTC and
+    # sqlfunc.date() returns UTC dates. Vercel server local time may differ.
+    utc_today = datetime.now(timezone.utc).date()
+
+    # Current streak (consecutive days ending today, UTC)
     current_streak = 0
-    check_date = date.today()
+    check_date = utc_today
     while check_date in counts_by_date:
         current_streak += 1
         check_date -= timedelta(days=1)
@@ -390,7 +394,7 @@ async def get_streak_data(
         longest_streak = max(longest_streak, streak)
 
     # 365-day contribution window — intensity = bucketed event count.
-    today = date.today()
+    today = utc_today
     contributions: List[ContributionData] = []
     for i in range(365):
         d = today - timedelta(days=365 - 1 - i)

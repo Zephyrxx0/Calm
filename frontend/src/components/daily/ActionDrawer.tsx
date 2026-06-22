@@ -93,7 +93,7 @@ function QuickForm({ onDone }: { onDone: () => void }) {
     setSubmitting(true);
     try {
       const token = await user.getIdToken();
-      await fetch("/api/daily/log/quick", {
+      const res = await fetch("/api/daily/log/quick", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,8 +101,9 @@ function QuickForm({ onDone }: { onDone: () => void }) {
         },
         body: JSON.stringify({ transport, meal, energy, notes }),
       });
+      if (!res.ok) throw new Error("Failed to log entry");
       setDone(true);
-      setTimeout(onDone, 900);
+      setTimeout(onDone, 1200);
     } catch {
       setSubmitting(false);
     }
@@ -170,7 +171,7 @@ function ChatReflection({ onDone }: { onDone: () => void }) {
     setSubmitting(true);
     try {
       const token = await user.getIdToken();
-      await fetch("/api/daily/log/reflection", {
+      const res = await fetch("/api/daily/log/reflection", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,8 +179,9 @@ function ChatReflection({ onDone }: { onDone: () => void }) {
         },
         body: JSON.stringify({ message, consciousness_score: score }),
       });
+      if (!res.ok) throw new Error("Failed to log reflection");
       setDone(true);
-      setTimeout(onDone, 900);
+      setTimeout(onDone, 1200);
     } catch {
       setSubmitting(false);
     }
