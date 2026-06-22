@@ -1,6 +1,7 @@
 """Interview API — session creation, chat SSE streaming, and AI coach integration."""
 import json
 import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -239,6 +240,7 @@ async def finalize_interview(
             firebase_uid=firebase_uid,
             activity_type=ActivityType.INTERVIEW,
             consciousness_score=5,  # interview = most intentional carbon act
+            logged_at=datetime.now(timezone.utc),
             activity_metadata={
                 "session_id": session_id,
                 "total_tonnes": data.total_tonnes,

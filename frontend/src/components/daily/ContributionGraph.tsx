@@ -55,9 +55,9 @@ const INTENSITY_COLORS: Record<number, string> = {
 const ACTIVITY_LABELS: Record<number, string> = {
   0: "No activity",
   1: "1 activity",
-  2: "2–3 activities",
-  3: "4–6 activities",
-  4: "7+ activities",
+  2: "2 activities",
+  3: "3–4 activities",
+  4: "5+ activities",
 };
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

@@ -13,7 +13,7 @@ heatmap derive from the same rows — the heatmap aggregates them per day.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, UploadFile, File, Form
@@ -158,6 +158,7 @@ async def log_quick_entry(
         firebase_uid=firebase_uid,
         activity_type=ActivityType.QUICK_LOG,
         consciousness_score=score,
+        logged_at=datetime.now(timezone.utc),
         activity_metadata={
             "transport": payload.transport,
             "meal": payload.meal,
@@ -191,6 +192,7 @@ async def log_chat_reflection(
         firebase_uid=firebase_uid,
         activity_type=ActivityType.CHAT_REFLECTION,
         consciousness_score=payload.consciousness_score,
+        logged_at=datetime.now(timezone.utc),
         activity_metadata={
             "excerpt": payload.message[:200],
         },
@@ -231,6 +233,7 @@ async def log_interview_completion(
         firebase_uid=firebase_uid,
         activity_type=ActivityType.INTERVIEW,
         consciousness_score=score,
+        logged_at=datetime.now(timezone.utc),
         activity_metadata={
             "session_id": payload.session_id,
             "total_tonnes": payload.total_tonnes,
@@ -267,6 +270,7 @@ async def log_receipt_scan(
         firebase_uid=firebase_uid,
         activity_type=ActivityType.RECEIPT_SCAN,
         consciousness_score=score,
+        logged_at=datetime.now(timezone.utc),
         activity_metadata={
             "merchant": merchant or "Unknown",
             "items": items,
@@ -405,19 +409,19 @@ async def get_streak_data(
 def _count_to_intensity(count: int) -> int:
     """Map a daily event count to a 0..4 heatmap intensity bucket.
 
-    0       → 0  (no entry, page background)
-    1       → 1  (faint warm)
-    2..3    → 2  (light terracotta)
-    4..6    → 3  (medium terracotta)
-    7+      → 4  (deep terracotta)
+    0       → 0  (no entry)
+    1       → 1  (faint)
+    2       → 2  (light, barely visible shift from 1)
+    3..4    → 3  (medium)
+    5+      → 4  (deep — truly active day)
     """
     if count <= 0:
         return 0
     if count == 1:
         return 1
-    if count <= 3:
+    if count == 2:
         return 2
-    if count <= 6:
+    if count <= 4:
         return 3
     return 4
 
