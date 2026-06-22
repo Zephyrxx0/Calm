@@ -13,6 +13,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://localhost:5432/ca
 if DATABASE_URL.startswith("postgresql://"):
     DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+# Supavisor transaction pooler requires prepared_statement_cache_size=0
 engine = create_async_engine(
     DATABASE_URL,
     echo=False,

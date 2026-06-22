@@ -45,16 +45,6 @@ async def _get_optional_uid(authorization: Optional[str] = Header(None)) -> Opti
 async def health():
     return {"status": "ok"}
 
-@router.get("/db-test")
-async def db_test(db: AsyncSession = Depends(get_session)):
-    try:
-        from sqlalchemy import text
-        result = await db.execute(text("SELECT 1 AS ok"))
-        row = result.one()
-        return {"db_connected": True, "result": dict(row._mapping)}
-    except Exception as e:
-        return {"db_connected": False, "error": str(e)}
-
 
 @router.post("/interview/start")
 async def start_interview(
