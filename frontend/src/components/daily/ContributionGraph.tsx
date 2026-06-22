@@ -63,12 +63,9 @@ const ACTIVITY_LABELS: Record<number, string> = {
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Format a Date as "yyyy-MM-dd" in UTC — matches the API's UTC date grouping.
-function formatDateUTC(date: Date): string {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(date.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+// Format a Date as "yyyy-MM-dd" in local time to match the day rendered in the grid.
+function formatDateLocal(date: Date): string {
+  return format(date, "yyyy-MM-dd");
 }
 
 // ─── Shared cell component ───────────────────────────────────────────────────
@@ -101,11 +98,11 @@ function DayCell({
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
       title={title}
-      onClick={clickable ? () => onClick(formatDateUTC(date)) : undefined}
+      onClick={clickable ? () => onClick(formatDateLocal(date)) : undefined}
       onKeyDown={
         clickable
           ? (e) => {
-              if (e.key === "Enter" || e.key === " ") onClick(formatDateUTC(date));
+              if (e.key === "Enter" || e.key === " ") onClick(formatDateLocal(date));
             }
           : undefined
       }
@@ -196,7 +193,7 @@ export function MonthlyView({
           
           {/* Actual days */}
           {days.map((day) => {
-            const dateStr = formatDateUTC(day);
+            const dateStr = formatDateLocal(day);
             return (
               <div key={dateStr}>
                 <DayCell
@@ -285,7 +282,7 @@ function YearlyView({
             const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
             const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
             return days.map((day) => {
-              const dateStr = formatDateUTC(day);
+              const dateStr = formatDateLocal(day);
               return (
                 <div key={dateStr}>
                   <DayCell
