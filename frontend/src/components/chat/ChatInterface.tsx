@@ -304,7 +304,7 @@ export default function ChatInterface({
       {/* Messages */}
       {endChatData && dialogDismissed && (
         <div className="flex-none z-10 px-6 py-4 bg-[#6A2323]/95 backdrop-blur-md border border-[#6A2323]/20 flex items-center justify-between gap-4 rounded-xl mt-4 shadow-lg w-full">
-          <span className="text-xl font-bold text-white font-serif tracking-wide">Your Edition is ready</span>
+          <span className="text-xl font-bold text-white font-serif tracking-wide">Your Report is ready</span>
           <button
             onClick={() => setDialogDismissed(false)}
             className="text-sm font-medium text-[#6A2323] bg-white hover:bg-white/90 px-5 py-2 rounded-lg transition-colors shadow-sm"
@@ -362,7 +362,7 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Edition dialog */}
+      {/* Report dialog */}
       {endChatData && !dialogDismissed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-background rounded-2xl shadow-2xl ring-1 ring-border max-w-md w-full mx-4 p-8 relative overflow-hidden">
@@ -378,7 +378,7 @@ export default function ChatInterface({
               </svg>
             </button>
             <h2 className="text-xl font-serif text-foreground mb-1 mt-2">
-              Your Edition is Ready
+              Your Report is Ready
             </h2>
             <p className="text-sm text-muted mb-6">
               Your carbon footprint has been calculated.
@@ -416,12 +416,12 @@ export default function ChatInterface({
                 <button
                   onClick={() =>
                     router.push(
-                      `/edition/${sessionId}?total=${endChatData.total_tonnes}&mode=${endChatData.mode}`
+                      `/report/${sessionId}?total=${endChatData.total_tonnes}&mode=${endChatData.mode}`
                     )
                   }
                   className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-hover transition-colors active:scale-[0.98]"
                 >
-                  View Full Edition
+                  View Full Report
                 </button>
               </div>
               <button
