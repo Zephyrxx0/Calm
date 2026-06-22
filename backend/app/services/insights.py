@@ -37,7 +37,7 @@ class InsightsService:
     """Generates personalized carbon insights using Gemini + rule-based fallback."""
 
     def __init__(self):
-        api_key = os.getenv("GOOGLE_API_KEY", "")
+        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY", "")
         self.client = genai.Client(api_key=api_key) if api_key else None
 
     async def get_insights(self, breakdown: dict, total_co2e: float) -> dict:
